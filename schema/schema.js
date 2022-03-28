@@ -14,6 +14,11 @@ const {
   GraphQLInputObjectType,
 } = graphql;
 
+
+const UserType = require("./UserType").UserType(GraphQLObjectType, GraphQLString);
+const UserQuery = require("./UserType").UserQuery(User, UserType, GraphQLList, GraphQLString, GraphQLID);
+const AddUser = require("./UserType").AddUser(User, UserType, GraphQLString);
+
 // Nested Objects Definition as args.
 
 const PersonalInformation = new GraphQLInputObjectType({
@@ -204,21 +209,6 @@ const ProfileSchema = new GraphQLObjectType({
   }),
 });
 
-const UserType = new GraphQLObjectType({
-  name: "User",
-  fields: () => ({
-    id: { type: GraphQLString },
-    userName: { type: GraphQLString },
-    email: { type: GraphQLString },
-    status: { type: GraphQLString },
-    lastLogin: { type: GraphQLString },
-    deletedAt: { type: GraphQLString },
-    createdBy: { type: GraphQLInt },
-    updatedBy: { type: GraphQLInt },
-    deletedBy: { type: GraphQLInt },
-  }),
-});
-
 const RootQuery = new GraphQLObjectType({
   name: "RootQueryType",
   fields: {
@@ -279,7 +269,6 @@ const RootQuery = new GraphQLObjectType({
         );
       },
     },
-
     removeProfile: {
       type: ProfileSchema,
       args: { id: { type: GraphQLID } },
@@ -287,58 +276,7 @@ const RootQuery = new GraphQLObjectType({
         return Profile.findByIdAndRemove(args.id);
       },
     },
-    user: {
-      type: UserType,
-      args: { id: { type: GraphQLString } },
-      resolve(parent, args) {
-        return User.findById(args.id);
-      },
-    },
-    users: {
-      type: new GraphQLList(UserType),
-      resolve(parent, args) {
-        return User.find();
-      },
-    },
-    updateUser: {
-      type: UserType,
-      args: {
-        id: { type: GraphQLID },
-        userName: { type: GraphQLString },
-        email: { type: GraphQLString },
-        status: { type: GraphQLString },
-        lastLogin: { type: GraphQLString },
-        deletedAt: { type: GraphQLString },
-        createdBy: { type: GraphQLInt },
-        updatedBy: { type: GraphQLInt },
-        deletedBy: { type: GraphQLInt },
-      },
-      resolve(parent, args) {
-        return User.findByIdAndUpdate(
-          args.id,
-          {
-            userName: args.userName,
-            email: args.email,
-            status: args.status,
-            lastLogin: args.lastLogin,
-            deletedAt: args.deletedAt,
-            createdBy: args.createdBy,
-            updatedBy: args.updatedBy,
-            deletedBy: args.deletedBy,
-          },
-          {
-            new: true,
-          }
-        );
-      },
-    },
-    removeUser: {
-      type: UserType,
-      args: { id: { type: GraphQLID } },
-      resolve(parent, args) {
-        return User.findByIdAndRemove(args.id);
-      },
-    },
+    ...UserQuery,
   },
 });
 
@@ -415,32 +353,7 @@ const Mutation = new GraphQLObjectType({
         return profile.save();
       },
     },
-    addUser: {
-      type: UserType,
-      args: {
-        userName: { type: GraphQLString },
-        email: { type: GraphQLString },
-        status: { type: GraphQLString },
-        lastLogin: { type: GraphQLString },
-        deletedAt: { type: GraphQLString },
-        createdBy: { type: GraphQLInt },
-        updatedBy: { type: GraphQLInt },
-        deletedBy: { type: GraphQLInt },
-      },
-      resolve(parent, args) {
-        let user = new User({
-          userName: args.userName,
-          email: args.email,
-          status: args.status,
-          lastLogin: args.lastLogin,
-          deletedAt: args.deletedAt,
-          createdBy: args.createdBy,
-          updatedBy: args.updatedBy,
-          deletedBy: args.deletedBy,
-        });
-        return user.save();
-      },
-    },
+    ...AddUser,
   },
 });
 
