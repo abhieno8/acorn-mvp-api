@@ -107,6 +107,24 @@ const DemoGraphicInformationSchema = new GraphQLObjectType({
   }),
 });
 
+const EggDonations = new GraphQLInputObjectType({
+  name: "EggDonations",
+  fields: () => ({
+    embrologyReportUrl: { type: GraphQLString },
+    age:{ type:GraphQLString },
+    MediaType: { type: GraphQLString },
+  }),
+});
+
+const EggDonationsSchema = new GraphQLObjectType({
+  name: "EggDonationsSchema",
+  fields: () => ({
+    embrologyReportUrl: { type: GraphQLString },
+    age:{ type:GraphQLString },
+    MediaType: { type: GraphQLString },
+  }),
+});
+
 const EggInformation = new GraphQLInputObjectType({
   name: "EggInfo",
   fields: () => ({
@@ -189,6 +207,8 @@ const ProfileSchema = new GraphQLObjectType({
   fields: () => ({
     UserId: { type: GraphQLString },
     DonorId: { type: GraphQLString },
+    FolderId: {type: GraphQLString},
+    Gender: {type: GraphQLString},
     FirstName: { type: GraphQLString },
     LastName: { type: GraphQLString },
     ProfileType: { type: GraphQLString },
@@ -201,6 +221,7 @@ const ProfileSchema = new GraphQLObjectType({
     ProfileMedia: { type: new GraphQLList(MediaInformationSchema) },
     DemographicInfo: { type: DemoGraphicInformationSchema },
     EggInfo: { type: EggInformationSchema },
+    EggDonations: { type: new GraphQLList(EggDonationsSchema) },
     HealthInfo: { type: HealthInformationSchema },
     DonationSettings: { type: DonationSettingsInformationSchema },
     NotificationSettings: { type: NotificationSettingsInformationSchema },
@@ -229,6 +250,8 @@ const RootQuery = new GraphQLObjectType({
       type: ProfileSchema,
       args: {
         id: { type: GraphQLID },
+        FolderId: {type: GraphQLString},
+        Gender: {type: GraphQLString},
         ProfileStatus: { type: GraphQLString },
         PersonalInfo: { type: PersonalInformation },
         ConsentForAcornTerms: { type: GraphQLBoolean },
@@ -238,6 +261,7 @@ const RootQuery = new GraphQLObjectType({
         ProfileMedia: { type: new GraphQLList(MediaInformation) },
         DemographicInfo: { type: DemoGraphicInformation },
         EggInfo: { type: EggInformation },
+        EggDonations: { type: new GraphQLList(EggDonations) },
         HealthInfo: { type: HealthInformation },
         DonationSettings: { type: DonationSettingsInformation },
         NotificationSettings: { type: NotificationSettingsInformation },
@@ -248,6 +272,8 @@ const RootQuery = new GraphQLObjectType({
         return Profile.findByIdAndUpdate(
           args.id,
           {
+            FolderId: {type: GraphQLString},
+            Gender: {type: GraphQLString},
             ProfileStatus: args.ProfileStatus,
             PersonalInfo: args.PersonalInfo,
             ConsentForAcornTerms: args.ConsentForAcornTerms,
@@ -257,6 +283,7 @@ const RootQuery = new GraphQLObjectType({
             ProfileMedia: args.ProfileMedia,
             DemographicInfo: args.DemographicInfo,
             EggInfo: args.EggInfo,
+            EggDonations: { type: EggDonations },
             HealthInfo: args.HealthInfo,
             DonationSettings: args.DonationSettings,
             NotificationSettings: args.NotificationSettings,
@@ -288,6 +315,8 @@ const Mutation = new GraphQLObjectType({
       args: {
         UserId: { type: GraphQLString },
         DonorId: { type: GraphQLString },
+        FolderId: {type: GraphQLString},
+        Gender: {type: GraphQLString},
         FirstName: { type: GraphQLString },
         LastName: { type: GraphQLString },
         ProfileType: { type: GraphQLString },
@@ -300,6 +329,7 @@ const Mutation = new GraphQLObjectType({
         profileMedia: { type: new GraphQLList(MediaInformation) },
         DemographicInfo: { type: DemoGraphicInformation },
         EggInfo: { type: EggInformation },
+        EggDonations: { type: new GraphQLList(EggDonations) },
         HealthInfo: { type: HealthInformation },
         DonationSettings: { type: DonationSettingsInformation },
         NotificationSettings: { type: NotificationSettingsInformation },
@@ -310,6 +340,8 @@ const Mutation = new GraphQLObjectType({
         const {
           UserId,
           DonorId,
+          FolderId,
+          Gender,
           FirstName,
           LastName,
           ProfileType,
@@ -322,6 +354,7 @@ const Mutation = new GraphQLObjectType({
           ProfileMedia,
           DemographicInfo,
           EggInfo,
+          EggDonations,
           HealthInfo,
           DonationSettings,
           NotificationSettings,
@@ -332,8 +365,10 @@ const Mutation = new GraphQLObjectType({
         let profile = new Profile({
           UserId: UserId,
           DonorId: DonorId,
+          FolderId: FolderId,
           FirstName: FirstName,
           LastName: LastName,
+          Gender: Gender, 
           ProfileType: ProfileType,
           ProfileStatus: ProfileStatus,
           PersonalInfo: PersonalInfo,
@@ -344,6 +379,7 @@ const Mutation = new GraphQLObjectType({
           ProfileMedia: ProfileMedia,
           DemographicInfo: DemographicInfo,
           EggInfo: EggInfo,
+          EggDonations: EggDonations,
           HealthInfo: HealthInfo,
           DonationSettings: DonationSettings,
           NotificationSettings: NotificationSettings,

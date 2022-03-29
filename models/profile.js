@@ -10,6 +10,18 @@ const ProfileMediaSchema = new Schema({
     }
 })
 
+const EggDonationSchema = new Schema({
+    embrologyReportUrl: { type: String },
+    age:{type:String},
+    MediaType: {
+        type: String,
+        enum: ['video','image','documents'],
+        default: 'image'
+    }
+})
+
+
+
 const IdentitySchema = new Schema({ 
     IdentityId: { type: String, max: 100 },
 	IdentityIdType: { type: String, max: 100 },
@@ -21,6 +33,7 @@ const IdentitySchema = new Schema({
 const ProfileSchema = new Schema({
     UserId: { type: String },
     DonorId: { type: String },
+    FolderId: { type: String },
     FirstName: { type: String, required: true },
     LastName: { type: String, required: true },
     ProfileType: { 
@@ -63,6 +76,8 @@ const ProfileSchema = new Schema({
             default: 'UnPublished'
          },
      },
+    EggDonations:[EggDonationSchema],
+    Gender: { type: String },
     HealthInfo: { 
         Weight: { type: Number },
         Height: { type: Number },
