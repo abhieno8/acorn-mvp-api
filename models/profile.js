@@ -33,7 +33,6 @@ const IdentitySchema = new Schema({
 const ProfileSchema = new Schema({
     UserId: { type: String },
     DonorId: { type: String },
-    FolderId: { type: String },
     FirstName: { type: String, required: true },
     LastName: { type: String, required: true },
     ProfileType: { 
@@ -76,8 +75,6 @@ const ProfileSchema = new Schema({
             default: 'UnPublished'
          },
      },
-    EggDonations:[EggDonationSchema],
-    Gender: { type: String },
     HealthInfo: { 
         Weight: { type: Number },
         Height: { type: Number },
