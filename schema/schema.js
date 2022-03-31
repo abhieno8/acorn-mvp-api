@@ -2,6 +2,8 @@ const graphql = require("graphql");
 const _ = require("lodash");
 const Profile = require("../models/profile");
 const User = require("../models/user");
+const Message = require("../models/message");
+const { ObjectId } = require('mongodb');
 
 const {
   GraphQLObjectType,
@@ -23,12 +25,18 @@ const AddUser = require("./UserType").AddUser(User, UserType, GraphQLString);
 const AddProfile = require("./ProfileType").AddProfile();
 const ProfileQuery = require("./ProfileType").ProfileQuery();
 
+// Mesage
+const MessageType = require("./MessageType").MessageType(GraphQLObjectType, GraphQLString, UserType, GraphQLList);
+const MessageQuery = require("./MessageType").MessageQuery(GraphQLObjectType, User, UserType, Message, MessageType, GraphQLList, GraphQLString, GraphQLID, GraphQLInt);
+const AddMessage = require("./MessageType").AddMessage(Message, MessageType, GraphQLString);
+
 
 const RootQuery = new GraphQLObjectType({
   name: "RootQueryType",
   fields: {
     ...UserQuery,
-    ...ProfileQuery
+    ...ProfileQuery,
+    ...MessageQuery
   },
 });
 
@@ -36,7 +44,8 @@ const Mutation = new GraphQLObjectType({
   name: "Mutation",
   fields: {
     ...AddUser,
-    ...AddProfile
+    ...AddProfile,
+    ...AddMessage
   },
 });
 
