@@ -56,16 +56,24 @@ const {
 //   }),
 // });
 
+const CompletnessSchema = new GraphQLObjectType({
+  name:"CompletnessSchema",
+  fields:() => ({
+    Completed:{type: GraphQLBoolean},
+    LastUpdatedOn:{type: GraphQLString}
+  })
+})
+
 const ProfileCompletenessInfoSchema = new GraphQLObjectType({
   name: "ProfileCompletenessInfoSchema",
   fields: () => ({
-    Application: { type: GraphQLBoolean },
-    PersonalProfileInformation: { type: GraphQLBoolean },
-    DemographicInformation: { type: GraphQLBoolean },
-    SetYourPrice: { type: GraphQLBoolean },
-    SetYourPrefernce: { type: GraphQLBoolean },
-    PublishProfile: { type: GraphQLBoolean },
-    RequiredScreening: { type: GraphQLBoolean },
+    Application: { type: CompletnessSchema },
+    PersonalProfileInformation: { type: CompletnessSchema },
+    DemographicInformation: { type: CompletnessSchema },
+    SetYourPrice: { type: CompletnessSchema },
+    SetYourPrefernce: { type: CompletnessSchema },
+    PublishProfile: { type: CompletnessSchema },
+    RequiredScreening: { type: CompletnessSchema },
   }),
 });
 
