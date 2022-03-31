@@ -1,6 +1,36 @@
 const graphql = require("graphql");
 const Profile = require("../models/profile");
 const User = require("../models/user");
+const Aws = require("aws-sdk");
+
+// const s3 = new Aws.S3({
+//   accessKeyId: "AKIA2ZH2PYMSROXVVEHE", // accessKeyId that is stored in .env file
+//   secretAccessKey: "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", // secretAccessKey is also store in .env file
+// });
+
+// const S3_BUCKET_NAME = "acorn-files-test";
+
+// To Update the permissions.
+function paramCreator(folderId, ImageUrl, subFolerName) {
+  // retrieve image name from imageUrl
+  const fileName = ImageUrl.slice(ImageUrl.lastIndexOf("/") + 1);
+  return {
+    Bucket: S3_BUCKET_NAME,
+    Key: `${folderId}/${subFolerName}/${fileName}`,
+    ACL: "public-read-write",
+    ContentType: "application/x-www-form-urlencoded",
+  };
+}
+// update s3 object
+function updateS3Object(folderId, ImageUrl, subFolerName) {
+  return new Promise(function (resolve, reject) {
+    const params = paramCreator(folderId, ImageUrl, subFolerName);
+    console.log(params);
+    s3.putObject(params, (err, data) => {
+      err ? reject(err) : resolve(data);
+    });
+  });
+}
 
 const {
   GraphQLObjectType,
@@ -13,6 +43,31 @@ const {
   GraphQLInputObjectType,
 } = graphql;
 
+// const ProfileCompletenessInfo = new GraphQLInputObjectType({
+//   name: "ProfileCompletenessInfo",
+//   fields: () => ({
+//     Application: { type: GraphQLBoolean },
+//     PersonalProfileInformation: { type: GraphQLBoolean },
+//     DemographicInformation: { type: GraphQLBoolean },
+//     SetYourPrice: { type: GraphQLBoolean },
+//     SetYourPrefernce: { type: GraphQLBoolean },
+//     PublishProfile: { type: GraphQLBoolean },
+//     RequiredScreening: { type: GraphQLBoolean },
+//   }),
+// });
+
+const ProfileCompletenessInfoSchema = new GraphQLObjectType({
+  name: "ProfileCompletenessInfoSchema",
+  fields: () => ({
+    Application: { type: GraphQLBoolean },
+    PersonalProfileInformation: { type: GraphQLBoolean },
+    DemographicInformation: { type: GraphQLBoolean },
+    SetYourPrice: { type: GraphQLBoolean },
+    SetYourPrefernce: { type: GraphQLBoolean },
+    PublishProfile: { type: GraphQLBoolean },
+    RequiredScreening: { type: GraphQLBoolean },
+  }),
+});
 
 const PersonalInformation = new GraphQLInputObjectType({
   name: "PersonalInfo",
@@ -84,7 +139,7 @@ const DemoGraphicInformation = new GraphQLInputObjectType({
     NaturalHairColor: { type: GraphQLString },
     EyeColor: { type: GraphQLString },
     Ethnicity: { type: GraphQLString },
-    HighestLevelOfEducation: { type: GraphQLInt },
+    HighestLevelOfEducation: { type: GraphQLString },
     Occupation: { type: GraphQLString },
   }),
 });
@@ -95,7 +150,7 @@ const DemoGraphicInformationSchema = new GraphQLObjectType({
     NaturalHairColor: { type: GraphQLString },
     EyeColor: { type: GraphQLString },
     Ethnicity: { type: GraphQLString },
-    HighestLevelOfEducation: { type: GraphQLInt },
+    HighestLevelOfEducation: { type: GraphQLString },
     Occupation: { type: GraphQLString },
   }),
 });
@@ -218,10 +273,163 @@ const ProfileSchema = new GraphQLObjectType({
     HealthInfo: { type: HealthInformationSchema },
     DonationSettings: { type: DonationSettingsInformationSchema },
     NotificationSettings: { type: NotificationSettingsInformationSchema },
+    ProfileCompletness: { type: ProfileCompletenessInfoSchema },
     CreatedBy: { type: GraphQLID },
     UpdatedBy: { type: GraphQLID },
   }),
 });
+
+// Profile Completeness checker Helper
+const isPersonalInfoComplete = (
+  personalInfo,
+  argsForUpdate,
+  previousCompletnessInfo
+) => {
+  const { DateOfBirth, Phone, Address, ZipCode, City, State, Country } = {
+    ...personalInfo,
+  };
+  const { PersonalProfileInformation } = { ...previousCompletnessInfo };
+  let isCompleted = true;
+  const latestUpdatedate = argsForUpdate.PersonalInfo
+    ? new Date()
+    : PersonalProfileInformation.LastUpdatedOn;
+  if (
+    !DateOfBirth ||
+    !Phone ||
+    !Address ||
+    !ZipCode ||
+    !City ||
+    !State ||
+    !Country
+  ) {
+    isCompleted = false;
+  }
+  return { Completed: isCompleted, LastUpdatedOn: latestUpdatedate };
+};
+
+const isDemographicInfoComplete = (
+  demographicInfo,
+  argsForUpdate,
+  previousCompletnessInfo
+) => {
+  const {
+    NaturalHairColor,
+    EyeColor,
+    Ethnicity,
+    HighestLevelOfEducation,
+    Occupation,
+  } = { ...demographicInfo };
+  const { DemographicInformation } = { ...previousCompletnessInfo };
+  let isCompleted = true;
+  const latestUpdatedate = argsForUpdate.DemographicInfo
+    ? new Date()
+    : DemographicInformation.LastUpdatedOn;
+  if (
+    !NaturalHairColor ||
+    !EyeColor ||
+    !Ethnicity ||
+    !HighestLevelOfEducation ||
+    !Occupation
+  ) {
+    isCompleted = false;
+  }
+  return { Completed: isCompleted, LastUpdatedOn: latestUpdatedate };
+};
+
+const isEggInfoComplete = (eggInfo, argsForUpdate, previousCompletnessInfo) => {
+  const { PricePerSet, NumberofSets } = { ...eggInfo };
+  const { SetYourPrice } = { ...previousCompletnessInfo };
+  let isCompleted = true;
+  const latestUpdatedate = argsForUpdate.EggInfo
+    ? new Date()
+    : SetYourPrice.LastUpdatedOn;
+  if (!PricePerSet || !NumberofSets) {
+    isCompleted = false;
+  }
+  return { Completed: isCompleted, LastUpdatedOn: latestUpdatedate };
+};
+
+const isPreferenceComplete = (
+  donationSettings,
+  notificationSettings,
+  argsForUpdate,
+  previousCompletnessInfo
+) => {
+  let isCompleted = true;
+  const { FamilyPreference, Payment, ContactPreference, Disclosure } = {
+    ...donationSettings,
+  };
+  const { ContactMethod, Frequency, Language } = { ...notificationSettings };
+  const { SetYourPrefernce } = { ...previousCompletnessInfo };
+  const latestUpdatedate =
+    argsForUpdate.DonationSettings || argsForUpdate.NotificationSettings
+      ? new Date()
+      : SetYourPrefernce.LastUpdatedOn;
+  if (
+    !FamilyPreference ||
+    !Payment ||
+    !ContactPreference ||
+    !Disclosure ||
+    !ContactMethod ||
+    !Frequency ||
+    !Language
+  ) {
+    isCompleted = false;
+  }
+  return { Completed: isCompleted, LastUpdatedOn: latestUpdatedate };
+};
+
+const isPublishProfileComplete = (
+  profileStatus,
+  argsForUpdate,
+  previousCompletnessInfo
+) => {
+  const isCompleted = profileStatus === "Published";
+  const { PublishProfile } = { ...previousCompletnessInfo };
+  const latestUpdatedate = argsForUpdate.ProfileStatus
+    ? new Date()
+    : PublishProfile.LastUpdatedOn;
+  return { Completed: isCompleted, LastUpdatedOn: latestUpdatedate };
+};
+
+const CalculateProfileCompletness = (profileDoc, thisArgs) => {
+  const {
+    PersonalInfo,
+    DemographicInfo,
+    EggInfo,
+    NotificationSettings,
+    DonationSettings,
+    ProfileStatus,
+    ProfileCompletness,
+  } = { ...profileDoc };
+
+  return {
+    Application: ProfileCompletness.Application,
+    PersonalProfileInformation: isPersonalInfoComplete(
+      PersonalInfo,
+      thisArgs,
+      ProfileCompletness
+    ),
+    DemographicInformation: isDemographicInfoComplete(
+      DemographicInfo,
+      thisArgs,
+      ProfileCompletness
+    ),
+    SetYourPrice: isEggInfoComplete(EggInfo, thisArgs, ProfileCompletness),
+    SetYourPrefernce: isPreferenceComplete(
+      NotificationSettings,
+      DonationSettings,
+      thisArgs,
+      ProfileCompletness
+    ),
+    PublishProfile: isPublishProfileComplete(
+      ProfileStatus,
+      thisArgs,
+      ProfileCompletness
+    ),
+    RequiredScreening: ProfileCompletness.RequiredScreening,
+  };
+};
 
 exports.ProfileQuery = function () {
   return {
@@ -264,8 +472,8 @@ exports.ProfileQuery = function () {
         CreatedBy: { type: GraphQLID },
         UpdatedBy: { type: GraphQLID },
       },
-      resolve(parent, args) {
-        return Profile.findByIdAndUpdate(
+      async resolve(parent, args) {
+        const firstPhaseUpdate = await Profile.findByIdAndUpdate(
           args.id,
           {
             Gender: args.Gender,
@@ -283,13 +491,29 @@ exports.ProfileQuery = function () {
             HealthInfo: args.HealthInfo,
             DonationSettings: args.DonationSettings,
             NotificationSettings: args.NotificationSettings,
-            CreatedBy: args.CreatedBy,
-            UpdatedBy: args.UpdatedBy,
+            UpdatedBy: args.UserId,
+            updatedAt: new Date(),
           },
           {
             new: true,
           }
         );
+        if (firstPhaseUpdate) {
+          const ProfileCompletnessStatus = CalculateProfileCompletness(
+            firstPhaseUpdate._doc,
+            args
+          );
+          return Profile.findByIdAndUpdate(
+            args.id,
+            {
+              ProfileCompletness: ProfileCompletnessStatus,
+              UpdatedBy: args.UserId,
+            },
+            {
+              new: true,
+            }
+          );
+        }
       },
     },
     removeProfile: {
@@ -356,15 +580,36 @@ exports.AddProfile = function () {
           UpdatedBy,
         } = args;
 
-        if (!UserId || !FolderId) {
-          return null;
+        if (!UserId || !FolderId || !ProfilePic) {
+          throw new Error("UserId, FolderId, or ProfilePic are missing");
         }
 
         const userExist = await User.findById(args.UserId);
+        const profileExistWithUser = await Profile.findOne({
+          UserId: args.UserId,
+        });
         if (!userExist) {
-          return null;
+          throw new Error(`User doesn't exist with user id: ${args.UserId}`);
+        }
+        if (profileExistWithUser) {
+          throw new Error(`Profile already exists`);
         }
 
+        const ProfileCompletnessStatus = {
+          Application: { Completed: true, LastUpdatedOn: new Date() },
+          PersonalProfileInformation: {
+            Completed: false,
+            LastUpdatedOn: new Date(),
+          },
+          DemographicInformation: {
+            Completed: false,
+            LastUpdatedOn: new Date(),
+          },
+          SetYourPrice: { Completed: false, LastUpdatedOn: new Date() },
+          SetYourPrefernce: { Completed: false, LastUpdatedOn: new Date() },
+          PublishProfile: { Completed: false, LastUpdatedOn: new Date() },
+          RequiredScreening: { Completed: false, LastUpdatedOn: new Date() },
+        };
         let profile = new Profile({
           UserId: UserId,
           DonorId: userExist._doc.userName,
@@ -386,8 +631,10 @@ exports.AddProfile = function () {
           HealthInfo: HealthInfo,
           DonationSettings: DonationSettings,
           NotificationSettings: NotificationSettings,
-          CreatedBy: CreatedBy,
-          UpdatedBy: UpdatedBy,
+          CreatedBy: UserId,
+          UpdatedBy: UserId,
+          ProfileCompletness: ProfileCompletnessStatus,
+          ProfileStatus:"UnPublished"
         });
         return profile.save();
       },
