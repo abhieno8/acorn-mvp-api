@@ -34,6 +34,8 @@ exports.MessageQuery = function (GraphQLObjectType, User, UserType, Message, Mes
             offset: { type: GraphQLInt },
             limit: { type: GraphQLInt },
             total: { type: GraphQLInt },
+            search: { type: GraphQLString },
+            order: { type: GraphQLInt },
             messageObject: { type: new GraphQLList(MessageType) },
         })
     });
@@ -104,10 +106,14 @@ exports.MessageQuery = function (GraphQLObjectType, User, UserType, Message, Mes
                 toUserId: { type: GraphQLString },
                 fromUserId: { type: GraphQLString },
                 offset: { type: GraphQLID },
-                limit: { type: GraphQLID }
+                limit: { type: GraphQLID },
+                search: { type: GraphQLString },
+                order: { type: GraphQLInt }
             },
             async resolve(parent, args) {
 
+                let search = args.search ? args.search : "";
+                let order = args.order ? args.order : -1;
                 let toUserId = args.toUserId;
                 let fromUserId = args.fromUserId;
                 let offset = args.offset ? args.offset : 0;
@@ -150,7 +156,7 @@ exports.MessageQuery = function (GraphQLObjectType, User, UserType, Message, Mes
                 else if (toUserId) {
 
                     let total_records = await Message.aggregate([
-                        { "$match": { toUserId: new ObjectId(toUserId) } },
+                        { "$match": { toUserId: new ObjectId(toUserId), message: { $regex: '.*' + search + '.*' } } },
                         {
                             "$group": {
                                 "_id": {
@@ -181,7 +187,7 @@ exports.MessageQuery = function (GraphQLObjectType, User, UserType, Message, Mes
                     total_records = total_records.length;
 
                     let list = await Message.aggregate([
-                        { "$match": { toUserId: new ObjectId(toUserId) } },
+                        { "$match": { toUserId: new ObjectId(toUserId), message: { $regex: '.*' + search + '.*' } } },
                         {
                             $lookup: {
                                 from: "users",
@@ -233,15 +239,17 @@ exports.MessageQuery = function (GraphQLObjectType, User, UserType, Message, Mes
                             "$limit": parseInt(limit)
                         },
                         {
-                            "$sort": { "messageDate": -1 }
+                            "$sort": { "messageDate": order }
                         }
                     ]);
 
                     return {
                         offset: offset,
                         limit: limit,
+                        search: search,
                         total: total_records,
                         fromUser: null,
+                        order: order,
                         toUser: null,
                         messageObject: list,
                     }

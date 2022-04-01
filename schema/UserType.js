@@ -102,9 +102,7 @@ exports.AddUser = function (User, UserType, GraphQLString) {
         deletedBy: { type: GraphQLString },
       },
       async resolve(parent, args) {
-        let is_exist_by_username = await User.findOne({
-          userName: args.userName,
-        });
+        let is_exist_by_username = await User.findOne({ userName: args.userName });
         let is_exist_by_email = await User.findOne({ email: args.email });
         if (
           (is_exist_by_username && is_exist_by_username._id) ||
