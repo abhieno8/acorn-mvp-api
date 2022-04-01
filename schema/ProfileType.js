@@ -83,7 +83,7 @@ const PersonalInformation = new GraphQLInputObjectType({
     DateOfBirth: { type: GraphQLString },
     Phone: { type: GraphQLString },
     Address: { type: GraphQLString },
-    ZipCode: { type: GraphQLInt },
+    ZipCode: { type: GraphQLString },
     City: { type: GraphQLString },
     State: { type: GraphQLString },
     Country: { type: GraphQLString },
@@ -96,7 +96,7 @@ const PersonalInformationSchema = new GraphQLObjectType({
     DateOfBirth: { type: GraphQLString },
     Phone: { type: GraphQLString },
     Address: { type: GraphQLString },
-    ZipCode: { type: GraphQLInt },
+    ZipCode: { type: GraphQLString },
     City: { type: GraphQLString },
     State: { type: GraphQLString },
     Country: { type: GraphQLString },
@@ -149,6 +149,9 @@ const DemoGraphicInformation = new GraphQLInputObjectType({
     Ethnicity: { type: GraphQLString },
     HighestLevelOfEducation: { type: GraphQLString },
     Occupation: { type: GraphQLString },
+    IsFedrallyRecognized: { type: GraphQLBoolean },
+    IsFelonyConvicted: { type: GraphQLBoolean },
+    SpecialTalents: { type: GraphQLString },
   }),
 });
 
@@ -160,6 +163,9 @@ const DemoGraphicInformationSchema = new GraphQLObjectType({
     Ethnicity: { type: GraphQLString },
     HighestLevelOfEducation: { type: GraphQLString },
     Occupation: { type: GraphQLString },
+    IsFedrallyRecognized: { type: GraphQLBoolean },
+    IsFelonyConvicted: { type: GraphQLBoolean },
+    SpecialTalents: { type: GraphQLString },
   }),
 });
 

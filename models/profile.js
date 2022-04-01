@@ -56,7 +56,7 @@ const ProfileSchema = new Schema({
     DateOfBirth: { type: Date },
     Phone: { type: String },
     Address: { type: String },
-    ZipCode: { type: Number },
+    ZipCode: { type: String },
     City: { type: String },
     State: { type: String },
     Country: { type: String },
@@ -73,6 +73,9 @@ const ProfileSchema = new Schema({
     Ethnicity: { type: String },
     HighestLevelOfEducation: { type: String },
     Occupation: { type: String },
+    IsFedrallyRecognized: { type: Boolean },
+    IsFelonyConvicted: { type: Boolean },
+    SpecialTalents: { type: String },
   },
   // SetYourPrice  // ProfileCompleteness
   EggInfo: {
