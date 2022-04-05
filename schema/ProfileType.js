@@ -276,6 +276,8 @@ const ProfileSchema = new GraphQLObjectType({
     DonationSettings: { type: DonationSettingsInformationSchema },
     NotificationSettings: { type: NotificationSettingsInformationSchema },
     ProfileCompletness: { type: ProfileCompletenessInfoSchema },
+    ScreeningType:{ type: GraphQLString },
+    DonorType: { type: GraphQLString},
     CreatedBy: { type: GraphQLID },
     UpdatedBy: { type: GraphQLID },
   }),
@@ -493,6 +495,7 @@ exports.ProfileQuery = function () {
         NotificationSettings: { type: NotificationSettingsInformation },
         CreatedBy: { type: GraphQLID },
         UpdatedBy: { type: GraphQLID },
+        ScreeningType:{ type: GraphQLString },
       },
       async resolve(parent, args) {
         const firstPhaseUpdate = await Profile.findByIdAndUpdate(
@@ -513,6 +516,7 @@ exports.ProfileQuery = function () {
             HealthInfo: args.HealthInfo,
             DonationSettings: args.DonationSettings,
             NotificationSettings: args.NotificationSettings,
+            ScreeningType:args.ScreeningType,
             UpdatedBy: args.UserId,
             updatedAt: new Date(),
           },
@@ -761,6 +765,8 @@ exports.AddProfile = function () {
         HealthInfo: { type: HealthInformation },
         DonationSettings: { type: DonationSettingsInformation },
         NotificationSettings: { type: NotificationSettingsInformation },
+        ScreeningType:{ type: GraphQLString },
+        DonorType: { type: GraphQLString},
         CreatedBy: { type: GraphQLID },
         UpdatedBy: { type: GraphQLID },
       },
@@ -788,6 +794,8 @@ exports.AddProfile = function () {
           NotificationSettings,
           CreatedBy,
           UpdatedBy,
+          ScreeningType,
+          DonorType
         } = args;
 
         if (!UserId || !FolderId || !ProfilePic || !ProfileType) {
@@ -845,6 +853,8 @@ exports.AddProfile = function () {
           UpdatedBy: UserId,
           ProfileCompletness: ProfileCompletnessStatus,
           ProfileStatus: "UnPublished",
+          ScreeningType: "UNSCREENED",
+          DonorType: DonorType
         });
         return profile.save();
       },

@@ -53,7 +53,7 @@ const ProfileSchema = new Schema({
   },
   //PersonalProfileInformation // ProfileCompleteness
   PersonalInfo: {
-    DateOfBirth: { type: Date },
+    DateOfBirth: { type: Date },  // a potential candidate for age
     Phone: { type: String },
     Address: { type: String },
     ZipCode: { type: String },
@@ -117,6 +117,8 @@ const ProfileSchema = new Schema({
     PublishProfile: CompletnessSchema,
     RequiredScreening: CompletnessSchema,
   },
+  ScreeningType:{ type: String , enum: ["SCREENED", "UNSCREENED"],default: "Parent",},
+  DonorType: { type: String , enum: ["EGGDONOR", "SPERMDONOR"]},
   CreatedAt: { type: Date, default: new Date() },
   updatedAt: { type: Date, default: new Date() },
 
