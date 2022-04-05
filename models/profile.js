@@ -116,6 +116,7 @@ const ProfileSchema = new Schema({
     SetYourPrefernce: CompletnessSchema,
     PublishProfile: CompletnessSchema,
     RequiredScreening: CompletnessSchema,
+    MedicalInformation: CompletnessSchema
   },
   ScreeningType:{ type: String , enum: ["SCREENED", "UNSCREENED"],default: "Parent",},
   DonorType: { type: String , enum: ["EGGDONOR", "SPERMDONOR"]},

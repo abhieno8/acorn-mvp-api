@@ -62,6 +62,7 @@ const ProfileCompletenessInfoSchema = new GraphQLObjectType({
     SetYourPrefernce: { type: CompletnessSchema },
     PublishProfile: { type: CompletnessSchema },
     RequiredScreening: { type: CompletnessSchema },
+    MedicalInformation: { type: CompletnessSchema },
   }),
 });
 
@@ -396,6 +397,33 @@ const isPublishProfileComplete = (
   return { Completed: isCompleted, LastUpdatedOn: latestUpdatedate };
 };
 
+const isMedicalInformationComplete = (
+  healthInfoObject,
+  argsForUpdate,
+  previousCompletnessInfo
+) => {
+  const { Weight, Height, BloodType } = {
+    ...healthInfoObject,
+  };
+  const { MedicalInformation } = { ...previousCompletnessInfo };
+  let isCompleted = true;
+  if (
+    !Weight ||
+    !Height ||
+    !BloodType
+  ) {
+    isCompleted = false;
+  }
+  if(!MedicalInformation) {
+    return { Completed: isCompleted, LastUpdatedOn: new Date() };
+  }
+  const latestUpdatedate = argsForUpdate.PersonalInfo
+    ? new Date()
+    : MedicalInformation.LastUpdatedOn;
+  
+  return { Completed: isCompleted, LastUpdatedOn: latestUpdatedate };
+};
+
 const CalculateProfileCompletness = (profileDoc, thisArgs) => {
   const {
     PersonalInfo,
@@ -405,6 +433,7 @@ const CalculateProfileCompletness = (profileDoc, thisArgs) => {
     DonationSettings,
     ProfileStatus,
     ProfileCompletness,
+    HealthInfo
   } = { ...profileDoc };
 
   return {
@@ -428,6 +457,11 @@ const CalculateProfileCompletness = (profileDoc, thisArgs) => {
     ),
     PublishProfile: isPublishProfileComplete(
       ProfileStatus,
+      thisArgs,
+      ProfileCompletness
+    ),
+    MedicalInformation: isMedicalInformationComplete(
+      HealthInfo,
       thisArgs,
       ProfileCompletness
     ),
@@ -826,6 +860,7 @@ exports.AddProfile = function () {
           SetYourPrice: { Completed: false, LastUpdatedOn: new Date() },
           SetYourPrefernce: { Completed: false, LastUpdatedOn: new Date() },
           PublishProfile: { Completed: false, LastUpdatedOn: new Date() },
+          MedicalInformation: { Completed: false, LastUpdatedOn: new Date() },
           RequiredScreening: { Completed: false, LastUpdatedOn: new Date() },
         };
         let profile = new Profile({
