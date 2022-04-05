@@ -43,26 +43,14 @@ const {
   GraphQLInputObjectType,
 } = graphql;
 
-// const ProfileCompletenessInfo = new GraphQLInputObjectType({
-//   name: "ProfileCompletenessInfo",
-//   fields: () => ({
-//     Application: { type: GraphQLBoolean },
-//     PersonalProfileInformation: { type: GraphQLBoolean },
-//     DemographicInformation: { type: GraphQLBoolean },
-//     SetYourPrice: { type: GraphQLBoolean },
-//     SetYourPrefernce: { type: GraphQLBoolean },
-//     PublishProfile: { type: GraphQLBoolean },
-//     RequiredScreening: { type: GraphQLBoolean },
-//   }),
-// });
 
 const CompletnessSchema = new GraphQLObjectType({
-  name:"CompletnessSchema",
-  fields:() => ({
-    Completed:{type: GraphQLBoolean},
-    LastUpdatedOn:{type: GraphQLString}
-  })
-})
+  name: "CompletnessSchema",
+  fields: () => ({
+    Completed: { type: GraphQLBoolean },
+    LastUpdatedOn: { type: GraphQLString },
+  }),
+});
 
 const ProfileCompletenessInfoSchema = new GraphQLObjectType({
   name: "ProfileCompletenessInfoSchema",
@@ -445,6 +433,26 @@ const CalculateProfileCompletness = (profileDoc, thisArgs) => {
   };
 };
 
+const FilteredProfileData = new GraphQLObjectType({
+  name: "FilteredProfileData",
+  fields: () => ({
+    Offset: { type: GraphQLInt },
+    Limit: { type: GraphQLInt },
+    Total: { type: GraphQLInt },
+    ProfileKeyWord: { type: GraphQLString },
+    Order: { type: GraphQLInt },
+    ProfileList: { type: new GraphQLList(ProfileSchema) },
+  }),
+});
+
+const PriceRangeType = new GraphQLInputObjectType({
+  name: "PriceRangeType",
+  fields: () => ({
+    MaxPrice: { type: GraphQLString },
+    MinPrice: { type: GraphQLString },
+  }),
+});
+
 exports.ProfileQuery = function () {
   return {
     profile: {
@@ -537,6 +545,194 @@ exports.ProfileQuery = function () {
         return Profile.findByIdAndRemove(args.id);
       },
     },
+    searchProfiles: {
+      type: FilteredProfileData,
+      args: {
+        // To be decided
+        FertilityNeeds: { type: GraphQLString },
+        ScreeningType: { type: GraphQLString }, // screened/unscreened
+        DonorType: { type: GraphQLString },
+        Availabilty: { type: GraphQLString },
+        Race: { type: GraphQLString },
+        Relegion: { type: GraphQLString },
+
+        // clear
+        QuantityOfNeeds: { type: GraphQLString },
+        LevelOfEducation: { type: GraphQLString },
+        EyeColor: { type: GraphQLString },
+        Ethinicity: { type: GraphQLString },
+        SpecialTalents: { type: GraphQLString },
+        priceRange: { type: PriceRangeType },
+        ProfileKeyWord: { type: GraphQLString },
+        Offset: { type: GraphQLInt },
+        Limit: { type: GraphQLInt },
+        Order: { type: GraphQLInt },
+        // For donors ProfileType is "Donor"
+        ProfileType: { type: GraphQLString },
+      },
+      async resolve(parent, args) {
+        if(!args.ProfileType) {
+          throw new Error(`ProfileType is a required field , choose from ["Parent","Donor","Clinic","Admin"]`);
+        }
+        let filteredList = [];
+        let search = args.ProfileKeyWord ? args.ProfileKeyWord : "";
+        let order = args.Order ? args.Order : -1;
+        let offset = args.Offset ? args.Offset : 0;
+        if (offset < 0) {
+          offset = 0;
+        }
+        let limit = args.Limit ? args.Limit : 25;
+        if (limit < 0) {
+          limit = 25;
+        }
+
+        let total_records = await Profile.find({
+          ProfileType: args.ProfileType,
+        });
+        total_records = total_records.length;
+        // strict Filtering
+        const intersectedConditions = (inputArgs) => {
+          let conditionList = [];
+          Object.keys(inputArgs).forEach((inputArgKey) => {
+            if (inputArgs[`${inputArgKey}`]) {
+              switch (inputArgKey) {
+                case "ProfileType":
+                  conditionList.push({
+                    ProfileType: inputArgs.ProfileType,
+                  });
+                  break;
+                case "QuantityOfNeeds":
+                  conditionList.push({
+                    "EggInfo.NumberofSets": {
+                      $gte: parseInt(inputArgs.QuantityOfNeeds),
+                    },
+                  });
+                  break;
+                case "LevelOfEducation":
+                  conditionList.push({
+                    "DemographicInfo.HighestLevelOfEducation": {
+                      $regex: ".*" + inputArgs.LevelOfEducation + ".*",
+                    },
+                  });
+                  break;
+                case "EyeColor":
+                  conditionList.push({
+                    "DemographicInfo.EyeColor": {
+                      $regex: ".*" + inputArgs.EyeColor + ".*",
+                    },
+                  });
+                  break;
+                case "Ethinicity":
+                  conditionList.push({
+                    "DemographicInfo.Ethnicity": {
+                      $regex: ".*" + inputArgs.Ethinicity + ".*",
+                    },
+                  });
+                  break;
+                default:
+                  break;
+              }
+            }
+          });
+          return conditionList;
+        };
+        // loose filtering
+        const unionConditions = () => {
+          let conditionList = [];
+          if (search) {
+            return [
+              { FirstName: { $regex: ".*" + args.search + ".*" } },
+              { LastName: { $regex: ".*" + args.search + ".*" } },
+              {
+                "DemographicInfo.SpecialTalents": {
+                  $regex: ".*" + args.search + ".*",
+                },
+              },
+              {
+                "DemographicInfo.Occupation": {
+                  $regex: ".*" + args.search + ".*",
+                },
+              },
+              {
+                "DemographicInfo.NaturalHairColor": {
+                  $regex: ".*" + args.search + ".*",
+                },
+              },
+              {
+                "DemographicInfo.Address": {
+                  $regex: ".*" + args.search + ".*",
+                },
+              },
+              {
+                "DemographicInfo.ZipCode": {
+                  $regex: ".*" + args.search + ".*",
+                },
+              },
+              {
+                "DemographicInfo.City": { $regex: ".*" + args.search + ".*" },
+              },
+              {
+                "DemographicInfo.State": {
+                  $regex: ".*" + args.search + ".*",
+                },
+              },
+              {
+                "DemographicInfo.Country": {
+                  $regex: ".*" + args.search + ".*",
+                },
+              },
+              {
+                "DemographicInfo.DonationType": {
+                  $regex: ".*" + args.search + ".*",
+                },
+              },
+              {
+                "DemographicInfo.DonorId": {
+                  $regex: ".*" + args.search + ".*",
+                },
+              },
+            ];
+          }
+          return conditionList;
+        };
+        const intersectedFilters = intersectedConditions(args);
+        const unionFilters = unionConditions(args);
+        if (search) {
+          filteredList = await Profile.find({
+            $and: [
+              {
+                $or: unionFilters,
+              },
+              {
+                $and: intersectedFilters,
+              },
+            ],
+          })
+            .sort("-CreatedAt")
+            .skip(offset)
+            .limit(limit);
+        } else {
+          filteredList = await Profile.find({
+            $and: [
+              {
+                $and: intersectedFilters,
+              },
+            ],
+          })
+            .sort("-CreatedAt")
+            .skip(offset)
+            .limit(limit);
+        }
+        return {
+          Offset: offset,
+          Limit: limit,
+          Total: total_records,
+          ProfileKeyWord: search,
+          Order: order,
+          ProfileList: filteredList,
+        };
+      },
+    },
   };
 };
 
@@ -594,8 +790,8 @@ exports.AddProfile = function () {
           UpdatedBy,
         } = args;
 
-        if (!UserId || !FolderId || !ProfilePic) {
-          throw new Error("UserId, FolderId, or ProfilePic are missing");
+        if (!UserId || !FolderId || !ProfilePic || !ProfileType) {
+          throw new Error("UserId, FolderId,ProfileType, or ProfilePic are missing");
         }
 
         const userExist = await User.findById(args.UserId);
@@ -648,7 +844,7 @@ exports.AddProfile = function () {
           CreatedBy: UserId,
           UpdatedBy: UserId,
           ProfileCompletness: ProfileCompletnessStatus,
-          ProfileStatus:"UnPublished"
+          ProfileStatus: "UnPublished",
         });
         return profile.save();
       },
