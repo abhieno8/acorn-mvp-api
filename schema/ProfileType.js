@@ -1,36 +1,7 @@
 const graphql = require("graphql");
+const { ObjectId } = require("mongodb");
 const Profile = require("../models/profile");
 const User = require("../models/user");
-const Aws = require("aws-sdk");
-
-// const s3 = new Aws.S3({
-//   accessKeyId: "AKIA2ZH2PYMSROXVVEHE", // accessKeyId that is stored in .env file
-//   secretAccessKey: "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", // secretAccessKey is also store in .env file
-// });
-
-// const S3_BUCKET_NAME = "acorn-files-test";
-
-// To Update the permissions.
-function paramCreator(folderId, ImageUrl, subFolerName) {
-  // retrieve image name from imageUrl
-  const fileName = ImageUrl.slice(ImageUrl.lastIndexOf("/") + 1);
-  return {
-    Bucket: S3_BUCKET_NAME,
-    Key: `${folderId}/${subFolerName}/${fileName}`,
-    ACL: "public-read-write",
-    ContentType: "application/x-www-form-urlencoded",
-  };
-}
-// update s3 object
-function updateS3Object(folderId, ImageUrl, subFolerName) {
-  return new Promise(function (resolve, reject) {
-    const params = paramCreator(folderId, ImageUrl, subFolerName);
-    console.log(params);
-    s3.putObject(params, (err, data) => {
-      err ? reject(err) : resolve(data);
-    });
-  });
-}
 
 const {
   GraphQLObjectType,
@@ -43,6 +14,22 @@ const {
   GraphQLInputObjectType,
 } = graphql;
 
+const ProfileUserType = new GraphQLObjectType({
+  name: "ProfileUserType",
+  fields: () => ({
+    id: { type: GraphQLString },
+    userName: { type: GraphQLString },
+    email: { type: GraphQLString },
+    status: { type: GraphQLString },
+    lastLogin: { type: GraphQLString },
+    createdAt: { type: GraphQLString },
+    createdBy: { type: GraphQLString },
+    updatedAt: { type: GraphQLString },
+    updatedBy: { type: GraphQLString },
+    deletedAt: { type: GraphQLString },
+    deletedBy: { type: GraphQLString },
+  }),
+});
 
 const CompletnessSchema = new GraphQLObjectType({
   name: "CompletnessSchema",
@@ -63,6 +50,7 @@ const ProfileCompletenessInfoSchema = new GraphQLObjectType({
     PublishProfile: { type: CompletnessSchema },
     RequiredScreening: { type: CompletnessSchema },
     MedicalInformation: { type: CompletnessSchema },
+    CompletionPercentage: { type: GraphQLString },
   }),
 });
 
@@ -76,6 +64,7 @@ const PersonalInformation = new GraphQLInputObjectType({
     City: { type: GraphQLString },
     State: { type: GraphQLString },
     Country: { type: GraphQLString },
+    Availability: { type: GraphQLString },
   }),
 });
 
@@ -89,6 +78,7 @@ const PersonalInformationSchema = new GraphQLObjectType({
     City: { type: GraphQLString },
     State: { type: GraphQLString },
     Country: { type: GraphQLString },
+    Availability: { type: GraphQLString },
   }),
 });
 
@@ -141,6 +131,8 @@ const DemoGraphicInformation = new GraphQLInputObjectType({
     IsFedrallyRecognized: { type: GraphQLBoolean },
     IsFelonyConvicted: { type: GraphQLBoolean },
     SpecialTalents: { type: GraphQLString },
+    Race: { type: GraphQLString },
+    Religion: { type: GraphQLString },
   }),
 });
 
@@ -155,6 +147,8 @@ const DemoGraphicInformationSchema = new GraphQLObjectType({
     IsFedrallyRecognized: { type: GraphQLBoolean },
     IsFelonyConvicted: { type: GraphQLBoolean },
     SpecialTalents: { type: GraphQLString },
+    Race: { type: GraphQLString },
+    Religion: { type: GraphQLString },
   }),
 });
 
@@ -194,11 +188,47 @@ const EggInformationSchema = new GraphQLObjectType({
   }),
 });
 
+const WeightInformation = new GraphQLInputObjectType({
+  name: "WeightInfo",
+  fields: () => ({
+    Measurement: { type: GraphQLInt },
+    Units: { type: GraphQLString },
+  }),
+});
+
+const WeightInformationSchema = new GraphQLObjectType({
+  name: "WeightInfoSchema",
+  fields: () => ({
+    Measurement: { type: GraphQLInt },
+    Units: { type: GraphQLString },
+  }),
+});
+
+const HeightInformation = new GraphQLInputObjectType({
+  name: "HeightInfo",
+  fields: () => ({
+    Inches: { type: GraphQLInt },
+    Feet: { type: GraphQLInt },
+    Cms: { type: GraphQLInt },
+    Units: { type: GraphQLString },
+  }),
+});
+
+const HeightInformationSchema = new GraphQLObjectType({
+  name: "HeightInfoSchema",
+  fields: () => ({
+    Inches: { type: GraphQLInt },
+    Feet: { type: GraphQLInt },
+    Cms: { type: GraphQLInt },
+    Units: { type: GraphQLString },
+  }),
+});
+
 const HealthInformation = new GraphQLInputObjectType({
   name: "HealthInfo",
   fields: () => ({
-    Weight: { type: GraphQLInt },
-    Height: { type: GraphQLInt },
+    Weight: { type: WeightInformation },
+    Height: { type: HeightInformation },
     BloodType: { type: GraphQLString },
   }),
 });
@@ -206,8 +236,8 @@ const HealthInformation = new GraphQLInputObjectType({
 const HealthInformationSchema = new GraphQLObjectType({
   name: "HealthInfoSchema",
   fields: () => ({
-    Weight: { type: GraphQLInt },
-    Height: { type: GraphQLInt }, //convert to string
+    Weight: { type: WeightInformationSchema },
+    Height: { type: HeightInformationSchema }, //convert to string
     BloodType: { type: GraphQLString },
   }),
 });
@@ -252,6 +282,24 @@ const NotificationSettingsInformationSchema = new GraphQLObjectType({
   }),
 });
 
+const SubscriptionInformation = new GraphQLInputObjectType({
+  name: "SubscriptionInfo",
+  fields: () => ({
+    SubscriptionName: { type: GraphQLString },
+    StartDate: { type: GraphQLString },
+    EndDate: { type: GraphQLString },
+  }),
+});
+
+const SubscriptionInformationSchema = new GraphQLObjectType({
+  name: "SubscriptionInfoSchema",
+  fields: () => ({
+    SubscriptionName: { type: GraphQLString },
+    StartDate: { type: GraphQLString },
+    EndDate: { type: GraphQLString },
+  }),
+});
+
 const ProfileSchema = new GraphQLObjectType({
   name: "ProfileSchema",
   fields: () => ({
@@ -277,8 +325,9 @@ const ProfileSchema = new GraphQLObjectType({
     DonationSettings: { type: DonationSettingsInformationSchema },
     NotificationSettings: { type: NotificationSettingsInformationSchema },
     ProfileCompletness: { type: ProfileCompletenessInfoSchema },
-    ScreeningType:{ type: GraphQLString },
-    DonorType: { type: GraphQLString},
+    ScreeningType: { type: GraphQLString },
+    Subscription: { type: SubscriptionInformationSchema },
+    DonorType: { type: GraphQLString },
     CreatedBy: { type: GraphQLID },
     UpdatedBy: { type: GraphQLID },
   }),
@@ -389,12 +438,35 @@ const isPublishProfileComplete = (
   argsForUpdate,
   previousCompletnessInfo
 ) => {
-  const isCompleted = profileStatus === "Published";
+  const isCompleted = profileStatus === "PUBLISHED";
   const { PublishProfile } = { ...previousCompletnessInfo };
   const latestUpdatedate = argsForUpdate.ProfileStatus
     ? new Date()
     : PublishProfile.LastUpdatedOn;
   return { Completed: isCompleted, LastUpdatedOn: latestUpdatedate };
+};
+
+const checkWeightCompleteness = (weight) => {
+  if (!weight || !weight._doc) {
+    return false;
+  }
+  const { Measurement, Units } = { ...weight._doc };
+  if (Measurement && Units) {
+    return true;
+  } else {
+    return false;
+  }
+};
+const checkHeightCompleteness = (height) => {
+  if (!height || !height._doc) {
+    return false;
+  }
+  const { Inches, Feet, Cms, Units } = { ...height._doc };
+  if ((Cms && Units) || (Inches && Feet && Units)) {
+    return true;
+  } else {
+    return false;
+  }
 };
 
 const isMedicalInformationComplete = (
@@ -407,21 +479,62 @@ const isMedicalInformationComplete = (
   };
   const { MedicalInformation } = { ...previousCompletnessInfo };
   let isCompleted = true;
+  // if (!Weight || !Height || !BloodType) {
+  //   isCompleted = false;
+  // }
   if (
-    !Weight ||
-    !Height ||
+    !checkHeightCompleteness(Height) ||
+    !checkWeightCompleteness(Weight) ||
     !BloodType
   ) {
     isCompleted = false;
   }
-  if(!MedicalInformation) {
+  if (!MedicalInformation) {
     return { Completed: isCompleted, LastUpdatedOn: new Date() };
   }
-  const latestUpdatedate = argsForUpdate.PersonalInfo
+  const latestUpdatedate = argsForUpdate.HealthInfo
     ? new Date()
     : MedicalInformation.LastUpdatedOn;
-  
+
   return { Completed: isCompleted, LastUpdatedOn: latestUpdatedate };
+};
+
+const calculateOverallPercentage = (
+  ApplicationCmp,
+  PersonalProfileInformationCmp,
+  DemographicInformationCmp,
+  SetYourPriceCmp,
+  SetYourPrefernceCmp,
+  PublishProfileCmp,
+  MedicalInformationCmp,
+  RequiredScreeningCmp
+) => {
+  let percentage = 0;
+  if (ApplicationCmp.Completed) {
+    percentage += 10;
+  }
+  if (SetYourPriceCmp.Completed) {
+    percentage += 10;
+  }
+  if (SetYourPrefernceCmp.Completed) {
+    percentage += 10;
+  }
+  if (PersonalProfileInformationCmp.Completed) {
+    percentage += 20;
+  }
+  if (DemographicInformationCmp.Completed) {
+    percentage += 20;
+  }
+  if (MedicalInformationCmp.Completed) {
+    percentage += 20;
+  }
+  if (PublishProfileCmp.Completed) {
+    percentage += 5;
+  }
+  if (RequiredScreeningCmp.Completed) {
+    percentage += 5;
+  }
+  return percentage.toString();
 };
 
 const CalculateProfileCompletness = (profileDoc, thisArgs) => {
@@ -433,39 +546,63 @@ const CalculateProfileCompletness = (profileDoc, thisArgs) => {
     DonationSettings,
     ProfileStatus,
     ProfileCompletness,
-    HealthInfo
+    HealthInfo,
   } = { ...profileDoc };
 
+  const ApplicationCmp = ProfileCompletness.Application;
+  const PersonalProfileInformationCmp = isPersonalInfoComplete(
+    PersonalInfo,
+    thisArgs,
+    ProfileCompletness
+  );
+  const DemographicInformationCmp = isDemographicInfoComplete(
+    DemographicInfo,
+    thisArgs,
+    ProfileCompletness
+  );
+  const SetYourPriceCmp = isEggInfoComplete(
+    EggInfo,
+    thisArgs,
+    ProfileCompletness
+  );
+  const SetYourPrefernceCmp = isPreferenceComplete(
+    NotificationSettings,
+    DonationSettings,
+    thisArgs,
+    ProfileCompletness
+  );
+  const PublishProfileCmp = isPublishProfileComplete(
+    ProfileStatus,
+    thisArgs,
+    ProfileCompletness
+  );
+  const MedicalInformationCmp = isMedicalInformationComplete(
+    HealthInfo,
+    thisArgs,
+    ProfileCompletness
+  );
+  const RequiredScreeningCmp = ProfileCompletness.RequiredScreening;
+  const CompletionPercentageCmp = calculateOverallPercentage(
+    ApplicationCmp,
+    PersonalProfileInformationCmp,
+    DemographicInformationCmp,
+    SetYourPriceCmp,
+    SetYourPrefernceCmp,
+    PublishProfileCmp,
+    MedicalInformationCmp,
+    RequiredScreeningCmp
+  );
+
   return {
-    Application: ProfileCompletness.Application,
-    PersonalProfileInformation: isPersonalInfoComplete(
-      PersonalInfo,
-      thisArgs,
-      ProfileCompletness
-    ),
-    DemographicInformation: isDemographicInfoComplete(
-      DemographicInfo,
-      thisArgs,
-      ProfileCompletness
-    ),
-    SetYourPrice: isEggInfoComplete(EggInfo, thisArgs, ProfileCompletness),
-    SetYourPrefernce: isPreferenceComplete(
-      NotificationSettings,
-      DonationSettings,
-      thisArgs,
-      ProfileCompletness
-    ),
-    PublishProfile: isPublishProfileComplete(
-      ProfileStatus,
-      thisArgs,
-      ProfileCompletness
-    ),
-    MedicalInformation: isMedicalInformationComplete(
-      HealthInfo,
-      thisArgs,
-      ProfileCompletness
-    ),
-    RequiredScreening: ProfileCompletness.RequiredScreening,
+    Application: ApplicationCmp,
+    PersonalProfileInformation: PersonalProfileInformationCmp,
+    DemographicInformation: DemographicInformationCmp,
+    SetYourPrice: SetYourPriceCmp,
+    SetYourPrefernce: SetYourPrefernceCmp,
+    PublishProfile: PublishProfileCmp,
+    MedicalInformation: MedicalInformationCmp,
+    RequiredScreening: RequiredScreeningCmp,
+    CompletionPercentage: CompletionPercentageCmp,
   };
 };
 
@@ -528,9 +665,10 @@ exports.ProfileQuery = function () {
         DonationSettings: { type: DonationSettingsInformation },
         NotificationSettings: { type: NotificationSettingsInformation },
         CreatedBy: { type: GraphQLID },
-        UpdatedBy: { type: GraphQLID },
-        ScreeningType:{ type: GraphQLString },
+        ScreeningType: { type: GraphQLString },
+        Subscription: { type: SubscriptionInformation },
       },
+
       async resolve(parent, args) {
         const firstPhaseUpdate = await Profile.findByIdAndUpdate(
           args.id,
@@ -550,14 +688,32 @@ exports.ProfileQuery = function () {
             HealthInfo: args.HealthInfo,
             DonationSettings: args.DonationSettings,
             NotificationSettings: args.NotificationSettings,
-            ScreeningType:args.ScreeningType,
-            UpdatedBy: args.UserId,
+            ScreeningType: args.ScreeningType,
+            Subscription: args.Subscription,
+            UpdatedBy: new ObjectId(args.UserId),
             updatedAt: new Date(),
           },
           {
             new: true,
           }
         );
+
+        if (!args.UserId) {
+          throw new Error(`UserId is a required field for update`);
+        }
+        const userExist = await User.findById(args.UserId);
+        const profileExistWithUser = await Profile.findOne({
+          UserId: args.UserId,
+        });
+        if (!userExist) {
+          throw new Error(`User doesn't exist with user id: ${args.UserId}`);
+        }
+        if (!profileExistWithUser) {
+          throw new Error(
+            `No profile exists with this user id: ${args.UserId}`
+          );
+        }
+
         if (firstPhaseUpdate) {
           const ProfileCompletnessStatus = CalculateProfileCompletness(
             firstPhaseUpdate._doc,
@@ -609,8 +765,10 @@ exports.ProfileQuery = function () {
         ProfileType: { type: GraphQLString },
       },
       async resolve(parent, args) {
-        if(!args.ProfileType) {
-          throw new Error(`ProfileType is a required field , choose from ["Parent","Donor","Clinic","Admin"]`);
+        if (!args.ProfileType) {
+          throw new Error(
+            `ProfileType is a required field , choose from ["Parent","Donor","Clinic","Admin"]`
+          );
         }
         let filteredList = [];
         let search = args.ProfileKeyWord ? args.ProfileKeyWord : "";
@@ -664,6 +822,29 @@ exports.ProfileQuery = function () {
                   conditionList.push({
                     "DemographicInfo.Ethnicity": {
                       $regex: ".*" + inputArgs.Ethinicity + ".*",
+                    },
+                  });
+                  break;
+                case "Race":
+                  conditionList.push({
+                    "DemographicInfo.Race": {
+                      $regex: ".*" + inputArgs.Race + ".*",
+                    },
+                  });
+                  break;
+                case "Relegion":
+                  conditionList.push({
+                    "DemographicInfo.Religion": {
+                      $regex: ".*" + inputArgs.Relegion + ".*",
+                    },
+                  });
+                case "FertilityNeeds":
+                  conditionList.push({
+                    Gender: {
+                      $regex:
+                        ".*" + inputArgs.FertilityNeeds === "EGG"
+                          ? "Female"
+                          : "Male" + ".*",
                     },
                   });
                   break;
@@ -799,15 +980,14 @@ exports.AddProfile = function () {
         HealthInfo: { type: HealthInformation },
         DonationSettings: { type: DonationSettingsInformation },
         NotificationSettings: { type: NotificationSettingsInformation },
-        ScreeningType:{ type: GraphQLString },
-        DonorType: { type: GraphQLString},
+        ScreeningType: { type: GraphQLString },
+        DonorType: { type: GraphQLString },
         CreatedBy: { type: GraphQLID },
         UpdatedBy: { type: GraphQLID },
       },
       async resolve(parent, args) {
         const {
           UserId,
-          DonorId,
           FolderId,
           Gender,
           FirstName,
@@ -826,14 +1006,19 @@ exports.AddProfile = function () {
           HealthInfo,
           DonationSettings,
           NotificationSettings,
-          CreatedBy,
-          UpdatedBy,
-          ScreeningType,
-          DonorType
+          DonorType,
         } = args;
 
         if (!UserId || !FolderId || !ProfilePic || !ProfileType) {
-          throw new Error("UserId, FolderId,ProfileType, or ProfilePic are missing");
+          throw new Error(
+            "UserId, FolderId,ProfileType, or ProfilePic are missing"
+          );
+        }
+
+        if (ProfileType === "DONOR") {
+          if (!DonorType) {
+            throw new Error("DonorType field is required for Donor Profile");
+          }
         }
 
         const userExist = await User.findById(args.UserId);
@@ -862,9 +1047,10 @@ exports.AddProfile = function () {
           PublishProfile: { Completed: false, LastUpdatedOn: new Date() },
           MedicalInformation: { Completed: false, LastUpdatedOn: new Date() },
           RequiredScreening: { Completed: false, LastUpdatedOn: new Date() },
+          CompletionPercentage: "10",
         };
         let profile = new Profile({
-          UserId: UserId,
+          UserId: new ObjectId(args.UserId),
           DonorId: userExist._doc.userName,
           FolderId: FolderId,
           Gender: Gender,
@@ -884,12 +1070,12 @@ exports.AddProfile = function () {
           HealthInfo: HealthInfo,
           DonationSettings: DonationSettings,
           NotificationSettings: NotificationSettings,
-          CreatedBy: UserId,
-          UpdatedBy: UserId,
+          CreatedBy: new ObjectId(args.UserId),
+          UpdatedBy: new ObjectId(args.UserId),
           ProfileCompletness: ProfileCompletnessStatus,
-          ProfileStatus: "UnPublished",
+          ProfileStatus: "UNPUBLISHED",
           ScreeningType: "UNSCREENED",
-          DonorType: DonorType
+          DonorType: DonorType,
         });
         return profile.save();
       },

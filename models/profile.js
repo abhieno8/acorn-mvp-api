@@ -5,9 +5,15 @@ const ProfileMediaSchema = new Schema({
   Url: { type: String },
   MediaType: {
     type: String,
-    enum: ["video", "image", "documents"],
-    default: "image",
+    enum: ["VIDEO", "IMAGE", "DOCUMENTS"],
+    default: "IMAGE",
   },
+});
+
+const SubscriptionSchema = new Schema({
+  SubscriptionName: { type: String, enum: ["PREMIUM", "NONPREMIUM"] },
+  StartDate: { type: Date },
+  EndDate: { type: Date },
 });
 
 const CompletnessSchema = new Schema({
@@ -20,8 +26,28 @@ const EggDonationSchema = new Schema({
   Age: { type: String },
   MediaType: {
     type: String,
-    enum: ["video", "image", "documents"],
-    default: "image",
+    enum: ["VIDEO", "IMAGE", "DOCUMENTS"],
+    default: "IMAGE",
+  },
+});
+
+const WeightSchema = new Schema({
+  Measurement: { type: Number },
+  Units: {
+    type: String,
+    required: true,
+    enum: ["LBS", "KG"],
+  },
+});
+
+const HeightSchema = new Schema({
+  Inches: { type: Number },
+  Feet: { type: Number },
+  Cms: { type: Number },
+  Units: {
+    type: String,
+    required: true,
+    enum: ["FI", "CM"],
   },
 });
 
@@ -34,32 +60,34 @@ const IdentitySchema = new Schema({
 });
 
 const ProfileSchema = new Schema({
-  UserId: { type: String },
+  UserId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: "User" },
   DonorId: { type: String },
   FolderId: { type: String },
   FirstName: { type: String, required: true },
   LastName: { type: String, required: true },
   ProfileType: {
     type: String,
-    enum: ["Parent", "Donor", "Clinic", "Admin"],
-    default: "Parent",
+    enum: ["PARENT", "DONOR", "CLINIC", "ADMIN"],
+    default: "PARENT",
   },
 
   // PublishProfile  // ProfileCompleteness
   ProfileStatus: {
     type: String,
-    enum: ["Published", "UnPublished", "Deleted"],
-    default: "UnPublished",
+    enum: ["PUBLISHED", "UNPUBLISHED", "DELETED"],
+    default: "UNPUBLISHED",
   },
   //PersonalProfileInformation // ProfileCompleteness
   PersonalInfo: {
-    DateOfBirth: { type: Date },  // a potential candidate for age
+    DateOfBirth: { type: Date }, // a potential candidate for age
     Phone: { type: String },
     Address: { type: String },
     ZipCode: { type: String },
     City: { type: String },
     State: { type: String },
     Country: { type: String },
+    Availability: { type: String },
+    // Add the availability
   },
   ConsentForAcornTerms: { type: Boolean },
   DonationType: { type: String, max: 10, required: true },
@@ -69,13 +97,44 @@ const ProfileSchema = new Schema({
   // DemographicInformation // ProfileCompleteness
   DemographicInfo: {
     NaturalHairColor: { type: String },
-    EyeColor: { type: String },
-    Ethnicity: { type: String },
-    HighestLevelOfEducation: { type: String },
+    EyeColor: {
+      type: String,
+      enum: ["AMBER", "BLUE", "BROWN", "GREEN", "HAZEL"],
+    },
+    Ethnicity: {
+      type: String,
+      enum: [
+        "EUROPEAN",
+        "LATIN AMERICAN",
+        "ASIAN",
+        "CARIBBEAN",
+        "AFRICAN",
+        "MIDDLE EASTERN",
+        "BRITISH ISLES",
+      ],
+    },
+    HighestLevelOfEducation: {
+      type: String,
+      enum: [
+        "TRADE SCHOOL",
+        "LATIN AMERICAN",
+        "BACHELORS",
+        "MASTERS",
+        "DOCTORATE",
+        "IVY LEAGUE",
+        "JURIS DOCTOR",
+        "MEDICAL DOCTOR",
+      ],
+    },
     Occupation: { type: String },
     IsFedrallyRecognized: { type: Boolean },
     IsFelonyConvicted: { type: Boolean },
     SpecialTalents: { type: String },
+    Race: { type: String, enum: ["BLACK", "ASIAN", "CAUCASIAN", "LATINO"] },
+    Religion: {
+      type: String,
+      enum: ["CHRISTIAN", "SPRITUAL", "CATHOLIC", "ATHIEST", "JEWISH"],
+    },
   },
   // SetYourPrice  // ProfileCompleteness
   EggInfo: {
@@ -84,16 +143,19 @@ const ProfileSchema = new Schema({
     // Need to be decided
     Category: {
       type: String,
-      enum: ["Published", "UnPublished", "Deleted"],
-      default: "UnPublished",
+      enum: ["PUBLISHED", "UNPUBLISHED", "DELETED"],
+      default: "UNPUBLISHED",
     },
   },
   EggDonation: [EggDonationSchema],
   Gender: { type: String },
   HealthInfo: {
-    Weight: { type: Number },
-    Height: { type: Number },
-    BloodType: { type: String },
+    Weight: WeightSchema,
+    Height: HeightSchema,
+    BloodType: {
+      type: String,
+      enum: ["O+", "O-", "A+", "A-", "B+", "B-", "AB+", "AB-", "Not sure"],
+    },
   },
   // SetYourPrefernce // ProfileCompleteness
   DonationSettings: {
@@ -116,15 +178,21 @@ const ProfileSchema = new Schema({
     SetYourPrefernce: CompletnessSchema,
     PublishProfile: CompletnessSchema,
     RequiredScreening: CompletnessSchema,
-    MedicalInformation: CompletnessSchema
+    MedicalInformation: CompletnessSchema,
+    CompletionPercentage: { type: String },
   },
-  ScreeningType:{ type: String , enum: ["SCREENED", "UNSCREENED"],default: "Parent",},
-  DonorType: { type: String , enum: ["EGGDONOR", "SPERMDONOR"]},
+  ScreeningType: {
+    type: String,
+    enum: ["SCREENED", "UNSCREENED"],
+    default: "UNSCREENED",
+  },
+  DonorType: { type: String, enum: ["EGGDONOR", "SPERMDONOR"] },
   CreatedAt: { type: Date, default: new Date() },
   updatedAt: { type: Date, default: new Date() },
 
-  CreatedBy: { type: String },
-  UpdatedBy: { type: String },
+  CreatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  UpdatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  Subscription: { type: SubscriptionSchema },
 });
 
 module.exports = mongoose.model("Profile", ProfileSchema);
