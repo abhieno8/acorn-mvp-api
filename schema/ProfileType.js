@@ -204,31 +204,11 @@ const WeightInformationSchema = new GraphQLObjectType({
   }),
 });
 
-const HeightInformation = new GraphQLInputObjectType({
-  name: "HeightInfo",
-  fields: () => ({
-    Inches: { type: GraphQLInt },
-    Feet: { type: GraphQLInt },
-    Cms: { type: GraphQLInt },
-    Units: { type: GraphQLString },
-  }),
-});
-
-const HeightInformationSchema = new GraphQLObjectType({
-  name: "HeightInfoSchema",
-  fields: () => ({
-    Inches: { type: GraphQLInt },
-    Feet: { type: GraphQLInt },
-    Cms: { type: GraphQLInt },
-    Units: { type: GraphQLString },
-  }),
-});
-
 const HealthInformation = new GraphQLInputObjectType({
   name: "HealthInfo",
   fields: () => ({
     Weight: { type: WeightInformation },
-    Height: { type: HeightInformation },
+    Height: { type: GraphQLString },
     BloodType: { type: GraphQLString },
   }),
 });
@@ -237,7 +217,7 @@ const HealthInformationSchema = new GraphQLObjectType({
   name: "HealthInfoSchema",
   fields: () => ({
     Weight: { type: WeightInformationSchema },
-    Height: { type: HeightInformationSchema }, //convert to string
+    Height: { type: GraphQLString }, //convert to string
     BloodType: { type: GraphQLString },
   }),
 });
@@ -457,17 +437,6 @@ const checkWeightCompleteness = (weight) => {
     return false;
   }
 };
-const checkHeightCompleteness = (height) => {
-  if (!height || !height._doc) {
-    return false;
-  }
-  const { Inches, Feet, Cms, Units } = { ...height._doc };
-  if ((Cms && Units) || (Inches && Feet && Units)) {
-    return true;
-  } else {
-    return false;
-  }
-};
 
 const isMedicalInformationComplete = (
   healthInfoObject,
@@ -479,11 +448,8 @@ const isMedicalInformationComplete = (
   };
   const { MedicalInformation } = { ...previousCompletnessInfo };
   let isCompleted = true;
-  // if (!Weight || !Height || !BloodType) {
-  //   isCompleted = false;
-  // }
   if (
-    !checkHeightCompleteness(Height) ||
+    !Height ||
     !checkWeightCompleteness(Weight) ||
     !BloodType
   ) {

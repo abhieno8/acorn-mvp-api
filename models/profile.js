@@ -40,16 +40,16 @@ const WeightSchema = new Schema({
   },
 });
 
-const HeightSchema = new Schema({
-  Inches: { type: Number },
-  Feet: { type: Number },
-  Cms: { type: Number },
-  Units: {
-    type: String,
-    required: true,
-    enum: ["FI", "CM"],
-  },
-});
+// const HeightSchema = new Schema({
+//   Inches: { type: Number },
+//   Feet: { type: Number },
+//   Cms: { type: Number },
+//   Units: {
+//     type: String,
+//     required: true,
+//     enum: ["FI", "CM"],
+//   },
+// });
 
 const IdentitySchema = new Schema({
   IdentityId: { type: String, max: 100 },
@@ -151,7 +151,7 @@ const ProfileSchema = new Schema({
   Gender: { type: String },
   HealthInfo: {
     Weight: WeightSchema,
-    Height: HeightSchema,
+    Height: { type: String },
     BloodType: {
       type: String,
       enum: ["O+", "O-", "A+", "A-", "B+", "B-", "AB+", "AB-", "Not sure"],
