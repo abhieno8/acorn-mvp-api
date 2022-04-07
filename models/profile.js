@@ -117,7 +117,7 @@ const ProfileSchema = new Schema({
       type: String,
       enum: [
         "TRADE SCHOOL",
-        "LATIN AMERICAN",
+        "ASSOCIATES",
         "BACHELORS",
         "MASTERS",
         "DOCTORATE",
