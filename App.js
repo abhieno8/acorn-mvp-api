@@ -7,7 +7,7 @@ const cors = require('cors')
 const app = express();
 app.use(cors());
 
-mongoose.connect("mongodb+srv://abhi:abhinav@cluster0.vnmw4.mongodb.net/acorn-mvp5?retryWrites=true&w=majority", {
+mongoose.connect("mongodb+srv://abhi:abhinav@cluster0.vnmw4.mongodb.net/acorn-mvp1?retryWrites=true&w=majority", {
 })
 .then(res => {
     console.log("Connected to DB=>>");
