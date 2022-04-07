@@ -90,7 +90,7 @@ const ProfileSchema = new Schema({
     // Add the availability
   },
   ConsentForAcornTerms: { type: Boolean },
-  DonationType: { type: String, max: 10, required: true },
+  DonationType: { type: String, max: 10 },
   Identity: [IdentitySchema],
   ProfilePic: { type: String, max: 100 }, // url
   ProfileMedia: [ProfileMediaSchema],
