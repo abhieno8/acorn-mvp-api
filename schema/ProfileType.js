@@ -587,8 +587,8 @@ const FilteredProfileData = new GraphQLObjectType({
 const PriceRangeType = new GraphQLInputObjectType({
   name: "PriceRangeType",
   fields: () => ({
-    MaxPrice: { type: GraphQLString },
-    MinPrice: { type: GraphQLString },
+    MaxPrice: { type: GraphQLInt },
+    MinPrice: { type: GraphQLInt },
   }),
 });
 
@@ -716,13 +716,14 @@ exports.ProfileQuery = function () {
         Race: { type: GraphQLString },
         Relegion: { type: GraphQLString },
 
+        NaturalHair: { type: GraphQLString },
         // clear
         QuantityOfNeeds: { type: GraphQLString },
         LevelOfEducation: { type: GraphQLString },
         EyeColor: { type: GraphQLString },
         Ethinicity: { type: GraphQLString },
         SpecialTalents: { type: GraphQLString },
-        priceRange: { type: PriceRangeType },
+        PriceRange: { type: PriceRangeType },
         ProfileKeyWord: { type: GraphQLString },
         Offset: { type: GraphQLInt },
         Limit: { type: GraphQLInt },
@@ -743,15 +744,11 @@ exports.ProfileQuery = function () {
         if (offset < 0) {
           offset = 0;
         }
-        let limit = args.Limit ? args.Limit : 25;
+        let limit = args.Limit ? args.Limit : 6;
         if (limit < 0) {
-          limit = 25;
+          limit = 6;
         }
 
-        let total_records = await Profile.find({
-          ProfileType: args.ProfileType,
-        });
-        total_records = total_records.length;
         // strict Filtering
         const intersectedConditions = (inputArgs) => {
           let conditionList = [];
@@ -761,6 +758,36 @@ exports.ProfileQuery = function () {
                 case "ProfileType":
                   conditionList.push({
                     ProfileType: inputArgs.ProfileType,
+                  });
+                  break;
+                case "PriceRange":
+
+                  inputArgs.PriceRange.MaxPrice != 0 || inputArgs.PriceRange.MinPrice != 0 ?
+                    conditionList.push({
+                      "EggInfo.PricePerSet": {
+                        $gte: parseInt(inputArgs.PriceRange.MinPrice),
+                        $lte: parseInt(inputArgs.PriceRange.MaxPrice),
+                      },
+                    })
+                    : ""
+                  break;
+
+                case "DonorType":
+                  conditionList.push({
+                    DonorType: inputArgs.DonorType,
+                  });
+                  break;
+                case "SpecialTalents":
+                  conditionList.push({
+                    "DemographicInfo.SpecialTalents": {
+                      $regex: ".*" + inputArgs.SpecialTalents + ".*",
+                    },
+                  });
+                  break;
+
+                case "ScreeningType":
+                  conditionList.push({
+                    ScreeningType: inputArgs.ScreeningType,
                   });
                   break;
                 case "QuantityOfNeeds":
@@ -802,6 +829,12 @@ exports.ProfileQuery = function () {
                   conditionList.push({
                     "DemographicInfo.Religion": {
                       $regex: ".*" + inputArgs.Relegion + ".*",
+                    },
+                  });
+                case "NaturalHairColor":
+                  conditionList.push({
+                    "DemographicInfo.NaturalHairColor": {
+                      $regex: ".*" + inputArgs.NaturalHair + ".*",
                     },
                   });
                 case "FertilityNeeds":
@@ -882,6 +915,32 @@ exports.ProfileQuery = function () {
         };
         const intersectedFilters = intersectedConditions(args);
         const unionFilters = unionConditions(args);
+
+
+        let total_records = 0;
+        if (intersectedFilters.length >= 1) {
+          total_records = await Profile.find({
+            ProfileType: args.ProfileType,
+            $and: [
+              {
+                $and: intersectedFilters
+              },
+            ]
+          });
+
+          //console.log("with " + total_records.length);
+        }
+        else {
+          total_records = await Profile.find({
+            ProfileType: args.ProfileType
+          });
+
+          //console.log("Without " + total_records.length);
+        }
+
+        total_records = total_records.length;
+
+
         if (search) {
           filteredList = await Profile.find({
             $and: [

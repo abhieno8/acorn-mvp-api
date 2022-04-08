@@ -30,13 +30,16 @@ const MessageType = require("./MessageType").MessageType(GraphQLObjectType, Grap
 const MessageQuery = require("./MessageType").MessageQuery(GraphQLObjectType, User, UserType, Message, MessageType, GraphQLList, GraphQLString, GraphQLID, GraphQLInt);
 const AddMessage = require("./MessageType").AddMessage(Message, MessageType, GraphQLString);
 
+//Common Drop Down Listing
+const CommonDropDownType = require("./CommonDropDown").CommonDropDownListing(GraphQLObjectType, GraphQLList, GraphQLString);
 
 const RootQuery = new GraphQLObjectType({
   name: "RootQueryType",
   fields: {
     ...UserQuery,
     ...ProfileQuery,
-    ...MessageQuery
+    ...MessageQuery,
+    ...CommonDropDownType
   },
 });
 

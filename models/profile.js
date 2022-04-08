@@ -96,10 +96,12 @@ const ProfileSchema = new Schema({
   ProfileMedia: [ProfileMediaSchema],
   // DemographicInformation // ProfileCompleteness
   DemographicInfo: {
-    NaturalHairColor: { type: String },
+    NaturalHairColor: { type: String ,enum :[
+     "BALD","CURLY","BLONDE","BROWN","WAVY","STRIGHT","BLACK","OTHER"
+    ] },
     EyeColor: {
       type: String,
-      enum: ["AMBER", "BLUE", "BROWN", "GREEN", "HAZEL"],
+      enum: ["AMBER", "BLUE", "BROWN", "GREEN", "HAZEL","GRAY","BLACK","OTHER"],
     },
     Ethnicity: {
       type: String,
@@ -111,6 +113,7 @@ const ProfileSchema = new Schema({
         "AFRICAN",
         "MIDDLE EASTERN",
         "BRITISH ISLES",
+        "OTHER"
       ],
     },
     HighestLevelOfEducation: {
@@ -124,16 +127,19 @@ const ProfileSchema = new Schema({
         "IVY LEAGUE",
         "JURIS DOCTOR",
         "MEDICAL DOCTOR",
+        "OTHER"
       ],
     },
     Occupation: { type: String },
     IsFedrallyRecognized: { type: Boolean },
     IsFelonyConvicted: { type: Boolean },
-    SpecialTalents: { type: String },
-    Race: { type: String, enum: ["BLACK", "ASIAN", "CAUCASIAN", "LATINO"] },
+    SpecialTalents: { type: String ,enum :[
+      "SPORTS","DANCE","ART","MUSIC","CULINARY ARTS","READING/WRITING" , "OTHER"
+    ] },
+    Race: { type: String, enum: ["BLACK", "ASIAN", "CAUCASIAN", "LATINO","OTHER"] },
     Religion: {
       type: String,
-      enum: ["CHRISTIAN", "SPRITUAL", "CATHOLIC", "ATHIEST", "JEWISH"],
+      enum: ["CHRISTIAN", "SPRITUAL", "CATHOLIC", "ATHIEST", "JEWISH","MUSLIM","HINDU","OTHER"],
     },
   },
   // SetYourPrice  // ProfileCompleteness
