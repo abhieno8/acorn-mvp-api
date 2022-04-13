@@ -648,6 +648,21 @@ exports.ProfileQuery = function () {
       },
 
       async resolve(parent, args) {
+        if (!args.UserId) {
+          throw new Error(`UserId is a required field for update`);
+        }
+        const userExist = await User.findById(args.UserId);
+        const profileExistWithUser = await Profile.findOne({
+          UserId: args.UserId,
+        });
+        if (!userExist) {
+          throw new Error(`User doesn't exist with user id: ${args.UserId}`);
+        }
+        if (!profileExistWithUser) {
+          throw new Error(
+            `No profile exists with this user id: ${args.UserId}`
+          );
+        }
         const firstPhaseUpdate = await Profile.findByIdAndUpdate(
           args.id,
           {
@@ -675,22 +690,6 @@ exports.ProfileQuery = function () {
             new: true,
           }
         );
-
-        if (!args.UserId) {
-          throw new Error(`UserId is a required field for update`);
-        }
-        const userExist = await User.findById(args.UserId);
-        const profileExistWithUser = await Profile.findOne({
-          UserId: args.UserId,
-        });
-        if (!userExist) {
-          throw new Error(`User doesn't exist with user id: ${args.UserId}`);
-        }
-        if (!profileExistWithUser) {
-          throw new Error(
-            `No profile exists with this user id: ${args.UserId}`
-          );
-        }
 
         if (firstPhaseUpdate) {
           const ProfileCompletnessStatus = CalculateProfileCompletness(

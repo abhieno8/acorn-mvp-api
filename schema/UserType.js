@@ -77,6 +77,31 @@ exports.UserQuery = function (
         );
       },
     },
+    checkUser:{
+      type: UserType,
+      args: {
+        userName: { type: GraphQLString },
+        email: { type: GraphQLString },
+    },
+    async resolve(parent, args) {
+      let is_exist_by_username=null;
+      let is_exist_by_email=null;
+      if(args.userName) {
+         is_exist_by_username = await User.findOne({
+          userName: args.userName,
+        });
+      }
+      if(args.email){
+         is_exist_by_email = await User.findOne({ email: args.email });
+      }
+       if (
+        (is_exist_by_username && is_exist_by_username._id) ||
+        (is_exist_by_email && is_exist_by_email._id)
+      ) {
+        throw new Error(`User already exists with this userName or email`)
+      }
+    }
+  },
     removeUser: {
       type: UserType,
       args: { id: { type: GraphQLString } },
