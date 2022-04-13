@@ -79,7 +79,7 @@ const ProfileSchema = new Schema({
   },
   //PersonalProfileInformation // ProfileCompleteness
   PersonalInfo: {
-    DateOfBirth: { type: Date }, // a potential candidate for age
+    DateOfBirth: { type: String }, // a potential candidate for age
     Phone: { type: String },
     Address: { type: String },
     ZipCode: { type: String },

@@ -14,6 +14,17 @@ const {
   GraphQLInputObjectType,
 } = graphql;
 
+
+
+
+const FavoriteTypeName = new GraphQLObjectType({
+  name: "FavoriteType",
+  fields: () => ({
+    id: { type: GraphQLString },
+    donorId: { type: GraphQLString },
+    userId: { type: GraphQLString }
+  }),
+});
 const ProfileUserType = new GraphQLObjectType({
   name: "ProfileUserType",
   fields: () => ({
@@ -310,6 +321,7 @@ const ProfileSchema = new GraphQLObjectType({
     DonorType: { type: GraphQLString },
     CreatedBy: { type: GraphQLID },
     UpdatedBy: { type: GraphQLID },
+    isFav: { type: FavoriteTypeName }
   }),
 });
 
@@ -730,6 +742,10 @@ exports.ProfileQuery = function () {
         Order: { type: GraphQLInt },
         // For donors ProfileType is "Donor"
         ProfileType: { type: GraphQLString },
+
+        userId: { type: GraphQLString },
+        filterPrice: { type: GraphQLString },
+        isFav: { type: GraphQLInt }
       },
       async resolve(parent, args) {
         if (!args.ProfileType) {
@@ -741,6 +757,18 @@ exports.ProfileQuery = function () {
         let search = args.ProfileKeyWord ? args.ProfileKeyWord : "";
         let order = args.Order ? args.Order : -1;
         let offset = args.Offset ? args.Offset : 0;
+        let isFav = args.isFav ? args.isFav : 0;
+        let filterPrice = args.filterPrice ? args.filterPrice : 0;
+
+        if(filterPrice == 0 )
+        {
+          filterPrice = "EggInfo.PricePerSet";
+        }
+        else
+        {
+          filterPrice = "-EggInfo.PricePerSet";
+        }
+        
         if (offset < 0) {
           offset = 0;
         }
@@ -748,6 +776,7 @@ exports.ProfileQuery = function () {
         if (limit < 0) {
           limit = 6;
         }
+        let userId = args.userId;
 
         // strict Filtering
         const intersectedConditions = (inputArgs) => {
@@ -859,54 +888,49 @@ exports.ProfileQuery = function () {
           let conditionList = [];
           if (search) {
             return [
-              { FirstName: { $regex: ".*" + args.search + ".*" } },
-              { LastName: { $regex: ".*" + args.search + ".*" } },
-              {
-                "DemographicInfo.SpecialTalents": {
-                  $regex: ".*" + args.search + ".*",
-                },
-              },
+              { FirstName: { $regex: ".*" + search + ".*" } },
+              { LastName: { $regex: ".*" + search + ".*" } },
               {
                 "DemographicInfo.Occupation": {
-                  $regex: ".*" + args.search + ".*",
+                  $regex: ".*" + search + ".*",
                 },
               },
               {
                 "DemographicInfo.NaturalHairColor": {
-                  $regex: ".*" + args.search + ".*",
+                  $regex: ".*" + search + ".*",
                 },
               },
               {
                 "DemographicInfo.Address": {
-                  $regex: ".*" + args.search + ".*",
+                  $regex: ".*" + search + ".*",
                 },
               },
               {
                 "DemographicInfo.ZipCode": {
-                  $regex: ".*" + args.search + ".*",
+                  $regex: ".*" + search + ".*",
                 },
               },
               {
-                "DemographicInfo.City": { $regex: ".*" + args.search + ".*" },
+                "DemographicInfo.City": { $regex: ".*" + search + ".*" },
               },
               {
                 "DemographicInfo.State": {
-                  $regex: ".*" + args.search + ".*",
+                  $regex: ".*" + search + ".*",
                 },
               },
               {
                 "DemographicInfo.Country": {
-                  $regex: ".*" + args.search + ".*",
+                  $regex: ".*" + search + ".*",
                 },
               },
               {
                 "DemographicInfo.DonationType": {
-                  $regex: ".*" + args.search + ".*",
+                  $regex: ".*" + search + ".*",
                 },
               },
               {
                 "DemographicInfo.DonorId": {
-                  $regex: ".*" + args.search + ".*",
+                  $regex: ".*" + search + ".*",
                 },
               },
             ];
@@ -918,55 +942,254 @@ exports.ProfileQuery = function () {
 
 
         let total_records = 0;
-        if (intersectedFilters.length >= 1) {
-          total_records = await Profile.find({
-            ProfileType: args.ProfileType,
-            $and: [
-              {
-                $and: intersectedFilters
-              },
-            ]
-          });
+        if (intersectedFilters.length >= 1 && unionFilters.length >= 1) {
 
-          //console.log("with " + total_records.length);
+          total_records = await Profile.aggregate([
+            {
+              $match: {
+                $and: [
+                  {
+                    $or: unionFilters,
+                  },
+                  {
+                    $and: intersectedFilters,
+                  },
+                ],
+              }
+            },
+            {
+              $lookup: {
+                from: "favorites",
+                let: { user: "$UserId" },
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: {
+                        $and: [
+                          { $eq: ["$donorId", "$$user"] },
+                          { $eq: ["$userId", new ObjectId(userId)] },
+                        ],
+                      },
+                    },
+                  },
+                ],
+                as: "isFav",
+              },
+            },
+            {
+              "$project": {
+                "id": "$_id",
+                "UserId": "$UserId",
+                "ProfilePic": "$ProfilePic",
+                "FirstName": "$FirstName",
+                "LastName": "$LastName",
+                "ScreeningType": "$ScreeningType",
+                "EggInfo": "$EggInfo",
+                "DemographicInfo": "$DemographicInfo",
+                "isFav": "$isFav"
+              }
+            }
+          ]);
+          // total_records = total_records.length;
+
+
+          filteredList = await Profile.aggregate([
+            {
+              $match: {
+                $and: [
+                  {
+                    $or: unionFilters,
+                  },
+                  {
+                    $and: intersectedFilters,
+                  },
+                ],
+              }
+            },
+            {
+              $lookup: {
+                from: "favorites",
+                let: { user: "$UserId" },
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: {
+                        $and: [
+                          { $eq: ["$donorId", "$$user"] },
+                          { $eq: ["$userId", new ObjectId(userId)] },
+                        ],
+                      },
+                    },
+                  },
+                ],
+                as: "isFav",
+              },
+            },
+
+            {
+              "$project": {
+                "id": "$_id",
+                "UserId": "$UserId",
+                "ProfilePic": "$ProfilePic",
+                "FirstName": "$FirstName",
+                "LastName": "$LastName",
+                "ScreeningType": "$ScreeningType",
+                "EggInfo": "$EggInfo",
+                "DemographicInfo": "$DemographicInfo",
+                "isFav": "$isFav"
+              }
+            }
+          ])
+            .sort(filterPrice)
+            .skip(offset)
+            .limit(limit);
+
+        }
+        else if (intersectedFilters.length >= 1) {
+
+          total_records = await Profile.aggregate([
+            {
+              $match: {
+                $and: [
+                  {
+                    $and: intersectedFilters,
+                  },
+                ],
+              }
+            },
+            {
+              $lookup: {
+                from: "favorites",
+                let: { user: "$UserId" },
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: {
+                        $and: [
+                          { $eq: ["$donorId", "$$user"] },
+                          { $eq: ["$userId", new ObjectId(userId)] },
+                        ],
+                      },
+                    },
+                  },
+                ],
+                as: "isFav",
+              },
+            },
+            {
+              "$project": {
+                "id": "$_id",
+                "UserId": "$UserId",
+                "ProfilePic": "$ProfilePic",
+                "FirstName": "$FirstName",
+                "LastName": "$LastName",
+                "ScreeningType": "$ScreeningType",
+                "EggInfo": "$EggInfo",
+                "DemographicInfo": "$DemographicInfo",
+                "isFav": "$isFav"
+              }
+            }
+          ]);
+
+
+          //total_records = total_records.length;
+
+          filteredList = await Profile.aggregate([
+            {
+              $match: {
+                $and: [
+                  {
+                    $and: intersectedFilters,
+                  },
+                ],
+              }
+            },
+            {
+              $lookup: {
+                from: "favorites",
+                let: { user: "$UserId" },
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: {
+                        $and: [
+                          { $eq: ["$donorId", "$$user"] },
+                          { $eq: ["$userId", new ObjectId(userId)] },
+                        ],
+                      },
+                    },
+                  },
+                ],
+                as: "isFav",
+              },
+            },
+
+            {
+              "$project": {
+                "id": "$_id",
+                "UserId": "$UserId",
+                "ProfilePic": "$ProfilePic",
+                "FirstName": "$FirstName",
+                "LastName": "$LastName",
+                "ScreeningType": "$ScreeningType",
+                "EggInfo": "$EggInfo",
+                "DemographicInfo": "$DemographicInfo",
+                "isFav": "$isFav"
+              }
+            }
+          ])
+            .sort(filterPrice)
+            .skip(offset)
+            .limit(limit);
+        }
+
+
+
+
+
+        if (isFav == 0) {
+          total_records = total_records.length;
         }
         else {
-          total_records = await Profile.find({
-            ProfileType: args.ProfileType
-          });
+          let count = 0;
 
-          //console.log("Without " + total_records.length);
+          for (let key in total_records) {
+
+            if (filteredList[key]) {
+
+              let tmp = filteredList[key].isFav;
+              // console.log(tmp);
+              if (tmp.length > 0) {
+                count++;
+              }
+            }
+          }
+          total_records = count;
         }
 
-        total_records = total_records.length;
-
-
-        if (search) {
-          filteredList = await Profile.find({
-            $and: [
-              {
-                $or: unionFilters,
-              },
-              {
-                $and: intersectedFilters,
-              },
-            ],
-          })
-            .sort("-CreatedAt")
-            .skip(offset)
-            .limit(limit);
-        } else {
-          filteredList = await Profile.find({
-            $and: [
-              {
-                $and: intersectedFilters,
-              },
-            ],
-          })
-            .sort("-CreatedAt")
-            .skip(offset)
-            .limit(limit);
+        if (isFav == 0) {
+          for (let key in filteredList) {
+            let tmp = filteredList[key].isFav;
+            if (tmp.length > 0) {
+              filteredList[key].isFav = tmp[0];
+            }
+            else {
+              filteredList[key].isFav = null;
+            }
+          }
         }
+        else {
+          let filter_data = [];
+          for (let key in filteredList) {
+            let tmp = filteredList[key].isFav;
+            if (tmp.length > 0) {
+              filteredList[key].isFav = tmp[0];
+              filter_data.push(filteredList[key]);
+            }
+          }
+          filteredList = filter_data;
+        }
+
         return {
           Offset: offset,
           Limit: limit,

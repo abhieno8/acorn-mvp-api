@@ -4,6 +4,7 @@ const Profile = require("../models/profile");
 const User = require("../models/user");
 const Message = require("../models/message");
 const { ObjectId } = require('mongodb');
+const Favorite = require("../models/favorite");
 
 const {
   GraphQLObjectType,
@@ -32,6 +33,9 @@ const AddMessage = require("./MessageType").AddMessage(Message, MessageType, Gra
 
 //Common Drop Down Listing
 const CommonDropDownType = require("./CommonDropDown").CommonDropDownListing(GraphQLObjectType, GraphQLList, GraphQLString);
+//Favorite 
+const FavoriteType = require("./FavoriteType").FavoriteType(GraphQLObjectType, GraphQLString);
+const AddFavorite = require("./FavoriteType").AddFavorite(Favorite, FavoriteType, GraphQLString);
 
 const RootQuery = new GraphQLObjectType({
   name: "RootQueryType",
@@ -48,7 +52,8 @@ const Mutation = new GraphQLObjectType({
   fields: {
     ...AddUser,
     ...AddProfile,
-    ...AddMessage
+    ...AddMessage,
+    ...AddFavorite
   },
 });
 

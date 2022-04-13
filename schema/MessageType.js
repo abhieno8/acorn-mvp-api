@@ -19,7 +19,8 @@ exports.MessageType = function (GraphQLObjectType, GraphQLString, UserType, Grap
             deletedAt: { type: GraphQLString },
             deletedBy: { type: GraphQLString },
             fromUserObj: { type: new GraphQLList(UserType) },
-            toUserObj: { type: new GraphQLList(UserType) }
+            toUserObj: { type: new GraphQLList(UserType) },
+            profile: { type: new GraphQLList(GraphQLString) }
         }),
     });
 };
@@ -141,6 +142,7 @@ exports.MessageQuery = function (GraphQLObjectType, User, UserType, Message, Mes
                         ]
                     }).sort("-messageDate").skip(offset).limit(limit);
 
+
                     let to_obj = await User.findById(toUserId);
                     let from_obj = await User.findById(fromUserId);
 
@@ -205,6 +207,14 @@ exports.MessageQuery = function (GraphQLObjectType, User, UserType, Message, Mes
                             }
                         },
                         {
+                            $lookup: {
+                                from: "profiles",
+                                localField: "fromUserId",
+                                foreignField: "UserId",
+                                as: "profile"
+                            }
+                        },
+                        {
                             "$group": {
                                 "_id": {
                                     "toUserId": "$toUserId",
@@ -216,7 +226,8 @@ exports.MessageQuery = function (GraphQLObjectType, User, UserType, Message, Mes
                                 "status": { "$last": "$status" },
                                 "messageType": { "$last": "$messageType" },
                                 "fromUserObj": { "$first": "$fromUserObj" },
-                                "toUserObj": { "$first": "$toUserObj" }
+                                "toUserObj": { "$first": "$toUserObj" },
+                                "profile": { "$first": "$profile.ProfilePic" }
                             }
                         },
                         {
@@ -229,7 +240,8 @@ exports.MessageQuery = function (GraphQLObjectType, User, UserType, Message, Mes
                                 "status": "$status",
                                 "messageType": "$messageType",
                                 "fromUserObj": "$fromUserObj",
-                                "toUserObj": "$toUserObj"
+                                "toUserObj": "$toUserObj",
+                                "profile": "$profile"
                             }
                         },
                         {
