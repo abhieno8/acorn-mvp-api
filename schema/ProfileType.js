@@ -618,7 +618,11 @@ exports.ProfileQuery = function () {
     },
     profiles: {
       type: new GraphQLList(ProfileSchema),
+      args: { ProfileType: { type: GraphQLString } },
       resolve(parent, args) {
+        if(args.ProfileType){
+          return Profile.find({ProfileType:args.ProfileType});
+        }
         return Profile.find();
       },
     },
