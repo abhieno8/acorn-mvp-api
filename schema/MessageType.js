@@ -54,46 +54,6 @@ exports.MessageQuery = function (GraphQLObjectType, User, UserType, Message, Mes
                 return Message.find()
             }
         },
-        updateMessage: {
-            type: MessageType,
-            args: {
-                id: { type: GraphQLID },
-                fromUserId: { type: GraphQLString },
-                toUserId: { type: GraphQLString },
-                message: { type: GraphQLString },
-                messageFile: { type: GraphQLString },
-                messageDate: { type: GraphQLString },
-                status: { type: GraphQLString },
-                messageType: { type: GraphQLString },
-                lastSeen: { type: GraphQLString },
-                createdAt: { type: GraphQLString },
-                createdBy: { type: GraphQLString },
-                updatedAt: { type: GraphQLString },
-                updatedBy: { type: GraphQLString },
-                deletedAt: { type: GraphQLString },
-                deletedBy: { type: GraphQLString }
-            },
-            resolve(parent, args) {
-                return Message.findByIdAndUpdate(args.id, {
-                    fromUserId: new ObjectId(args.fromUserId),
-                    toUserId: new ObjectId(args.toUserId),
-                    message: args.message,
-                    messageFile: args.messageFile,
-                    messageDate: args.messageDate,
-                    status: args.status,
-                    messageType: args.messageType,
-                    lastSeen: args.lastSeen,
-                    createdAt: args.createdAt ? new Date(args.createdAt).getTime() : null,
-                    createdBy: args.createdBy ? new ObjectId(args.createdBy) : null,
-                    updatedAt: args.updatedAt ? new Date(args.updatedAt).getTime() : new Date().getTime(),
-                    updatedBy: args.updatedBy ? new ObjectId(args.updatedBy) : null,
-                    deletedAt: args.deletedAt ? new Date(args.deletedAt).getTime() : null,
-                    deletedBy: args.deletedBy ? new ObjectId(args.deletedBy) : null
-                }, {
-                    new: true
-                })
-            }
-        },
         removeMessage: {
             type: MessageType,
             args: { id: { type: GraphQLID } },
@@ -225,9 +185,9 @@ exports.MessageQuery = function (GraphQLObjectType, User, UserType, Message, Mes
                                 "messageDate": { "$last": "$messageDate" },
                                 "status": { "$last": "$status" },
                                 "messageType": { "$last": "$messageType" },
-                                "fromUserObj": { "$first": "$fromUserObj" },
-                                "toUserObj": { "$first": "$toUserObj" },
-                                "profile": { "$first": "$profile.ProfilePic" }
+                                "fromUserObj": { "$last": "$fromUserObj" },
+                                "toUserObj": { "$last": "$toUserObj" },
+                                "profile": { "$last": "$profile.ProfilePic" }
                             }
                         },
                         {
@@ -266,6 +226,40 @@ exports.MessageQuery = function (GraphQLObjectType, User, UserType, Message, Mes
                         messageObject: list,
                     }
                 }
+            }
+        },
+        getFlaggedMessageList: {
+            type: MessageType,
+            async resolve(parent, args) {
+
+                return await Message.aggregate([
+                    {
+                        "$match": { status: "Flagged" }
+                    },
+                    {
+                        $group: {
+                            "_id": "$_id",
+                            "toUserId": { "$last": "$toUserId" },
+                            "fromUserId": { "$last": "$fromUserId" },
+                            "message": { "$last": "$message" },
+                            "messageFile": { "$last": "$messageFile" },
+                            "messageDate": { "$last": "$messageDate" },
+                            "messageType": { "$last": "$messageType" }
+                        }
+                    },
+                    {
+                        "$project": {
+                            "_id": "$_id",
+                            "toUserId": "$toUserId",
+                            "fromUserId": "$fromUserId",
+                            "message": "$message",
+                            "messageFile": "$messageFile",
+                            "messageDate": "$messageDate",
+                            "status": "$status",
+                            "messageType": "$messageType"
+                        }
+                    }
+                ]);
             }
         }
     }
@@ -313,4 +307,82 @@ exports.AddMessage = function (Message, MessageType, GraphQLString) {
         }
     }
 
+};
+
+
+exports.UpdateMessage = function (Message, MessageType, GraphQLID, GraphQLString) {
+
+    return {
+        updateMessage: {
+            type: MessageType,
+            args: {
+                id: { type: GraphQLID },
+                fromUserId: { type: GraphQLString },
+                toUserId: { type: GraphQLString },
+                message: { type: GraphQLString },
+                messageFile: { type: GraphQLString },
+                messageDate: { type: GraphQLString },
+                status: { type: GraphQLString },
+                messageType: { type: GraphQLString },
+                lastSeen: { type: GraphQLString },
+                createdAt: { type: GraphQLString },
+                createdBy: { type: GraphQLString },
+                updatedAt: { type: GraphQLString },
+                updatedBy: { type: GraphQLString },
+                deletedAt: { type: GraphQLString },
+                deletedBy: { type: GraphQLString }
+            },
+            resolve(parent, args) {
+
+                let update_obj = {};
+                if (args.fromUserId) {
+                    update_obj.fromUserId = new ObjectId(args.fromUserId);
+                }
+                if (args.toUserId) {
+                    update_obj.toUserId = new ObjectId(args.toUserId);
+                }
+
+                if (args.message) {
+                    update_obj.message = args.message;
+                }
+                if (args.messageFile) {
+                    update_obj.messageFile = args.messageFile;
+                }
+                if (args.messageDate) {
+                    update_obj.messageDate = args.messageDate;
+                }
+                if (args.status) {
+                    update_obj.status = args.status;
+                }
+
+                if (args.messageType) {
+                    update_obj.messageType = args.messageType;
+                }
+                if (args.lastSeen) {
+                    update_obj.lastSeen = args.lastSeen;
+                }
+
+                if (args.updatedAt) {
+                    update_obj.updatedAt = new Date(args.updatedAt).getTime();
+                }
+                else {
+                    update_obj.updatedAt = new Date().getTime();
+                }
+
+                if (args.updatedBy) {
+                    update_obj.updatedBy = new ObjectId(args.updatedBy);
+                }
+                if (args.deletedAt) {
+                    update_obj.deletedAt = new Date(args.deletedAt).getTime();
+                }
+                if (args.deletedBy) {
+                    update_obj.deletedBy = new ObjectId(args.deletedBy);
+                }
+
+                return Message.findByIdAndUpdate(args.id, update_obj, {
+                    new: true
+                })
+            }
+        }
+    }
 };

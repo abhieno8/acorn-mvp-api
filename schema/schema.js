@@ -30,6 +30,7 @@ const ProfileQuery = require("./ProfileType").ProfileQuery();
 const MessageType = require("./MessageType").MessageType(GraphQLObjectType, GraphQLString, UserType, GraphQLList);
 const MessageQuery = require("./MessageType").MessageQuery(GraphQLObjectType, User, UserType, Message, MessageType, GraphQLList, GraphQLString, GraphQLID, GraphQLInt);
 const AddMessage = require("./MessageType").AddMessage(Message, MessageType, GraphQLString);
+const UpdateMessage = require("./MessageType").UpdateMessage(Message, MessageType, GraphQLID, GraphQLString);
 
 //Common Drop Down Listing
 const CommonDropDownType = require("./CommonDropDown").CommonDropDownListing(GraphQLObjectType, GraphQLList, GraphQLString);
@@ -53,7 +54,8 @@ const Mutation = new GraphQLObjectType({
     ...AddUser,
     ...AddProfile,
     ...AddMessage,
-    ...AddFavorite
+    ...AddFavorite,
+    ...UpdateMessage
   },
 });
 

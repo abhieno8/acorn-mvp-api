@@ -763,15 +763,13 @@ exports.ProfileQuery = function () {
         let isFav = args.isFav ? args.isFav : 0;
         let filterPrice = args.filterPrice ? args.filterPrice : 0;
 
-        if(filterPrice == 0 )
-        {
+        if (filterPrice == 0) {
           filterPrice = "EggInfo.PricePerSet";
         }
-        else
-        {
+        else {
           filterPrice = "-EggInfo.PricePerSet";
         }
-        
+
         if (offset < 0) {
           offset = 0;
         }
@@ -788,9 +786,10 @@ exports.ProfileQuery = function () {
             if (inputArgs[`${inputArgKey}`]) {
               switch (inputArgKey) {
                 case "ProfileType":
-                  conditionList.push({
-                    ProfileType: inputArgs.ProfileType,
-                  });
+                  if (inputArgs.ProfileType)
+                    conditionList.push({
+                      ProfileType: inputArgs.ProfileType,
+                    });
                   break;
                 case "PriceRange":
 
@@ -805,79 +804,77 @@ exports.ProfileQuery = function () {
                   break;
 
                 case "DonorType":
-                  conditionList.push({
-                    DonorType: inputArgs.DonorType,
-                  });
+                  if (inputArgs.DonorType)
+                    conditionList.push({
+                      DonorType: inputArgs.DonorType,
+                    });
                   break;
                 case "SpecialTalents":
-                  conditionList.push({
-                    "DemographicInfo.SpecialTalents": {
-                      $regex: ".*" + inputArgs.SpecialTalents + ".*",
-                    },
-                  });
+                  if (inputArgs.SpecialTalents)
+                    conditionList.push({
+                      "DemographicInfo.SpecialTalents": inputArgs.SpecialTalents
+                    });
                   break;
 
                 case "ScreeningType":
-                  conditionList.push({
-                    ScreeningType: inputArgs.ScreeningType,
-                  });
+                  if (inputArgs.ScreeningType)
+                    conditionList.push({
+                      ScreeningType: inputArgs.ScreeningType,
+                    });
                   break;
                 case "QuantityOfNeeds":
-                  conditionList.push({
-                    "EggInfo.NumberofSets": {
-                      $gte: parseInt(inputArgs.QuantityOfNeeds),
-                    },
-                  });
+                  if (inputArgs.QuantityOfNeeds)
+                    conditionList.push({
+                      "EggInfo.NumberofSets": {
+                        $gte: parseInt(inputArgs.QuantityOfNeeds),
+                      },
+                    });
                   break;
                 case "LevelOfEducation":
-                  conditionList.push({
-                    "DemographicInfo.HighestLevelOfEducation": {
-                      $regex: ".*" + inputArgs.LevelOfEducation + ".*",
-                    },
-                  });
+                  if (inputArgs.LevelOfEducation)
+                    conditionList.push({
+                      "DemographicInfo.HighestLevelOfEducation": inputArgs.LevelOfEducation
+                    });
                   break;
                 case "EyeColor":
-                  conditionList.push({
-                    "DemographicInfo.EyeColor": {
-                      $regex: ".*" + inputArgs.EyeColor + ".*",
-                    },
-                  });
+                  if (inputArgs.EyeColor)
+                    conditionList.push({
+                      "DemographicInfo.EyeColor": inputArgs.EyeColor
+                    });
                   break;
                 case "Ethinicity":
-                  conditionList.push({
-                    "DemographicInfo.Ethnicity": {
-                      $regex: ".*" + inputArgs.Ethinicity + ".*",
-                    },
-                  });
+                  if (inputArgs.Ethinicity)
+                    conditionList.push({
+                      "DemographicInfo.Ethnicity": inputArgs.Ethinicity
+                    });
                   break;
                 case "Race":
-                  conditionList.push({
-                    "DemographicInfo.Race": {
-                      $regex: ".*" + inputArgs.Race + ".*",
-                    },
-                  });
+                  if (inputArgs.Race)
+                    conditionList.push({
+                      "DemographicInfo.Race": inputArgs.Race
+                    });
                   break;
                 case "Relegion":
-                  conditionList.push({
-                    "DemographicInfo.Religion": {
-                      $regex: ".*" + inputArgs.Relegion + ".*",
-                    },
-                  });
-                case "NaturalHairColor":
-                  conditionList.push({
-                    "DemographicInfo.NaturalHairColor": {
-                      $regex: ".*" + inputArgs.NaturalHair + ".*",
-                    },
-                  });
+                  if (inputArgs.Relegion)
+                    conditionList.push({
+                      "DemographicInfo.Religion": inputArgs.Relegion
+                    });
+                case "NaturalHair":
+                  if (inputArgs.NaturalHair)
+                    conditionList.push({
+                      "DemographicInfo.NaturalHairColor": inputArgs.NaturalHair
+                    });
                 case "FertilityNeeds":
-                  conditionList.push({
-                    Gender: {
-                      $regex:
-                        ".*" + inputArgs.FertilityNeeds === "EGG"
-                          ? "Female"
-                          : "Male" + ".*",
-                    },
-                  });
+
+                  if (inputArgs.FertilityNeeds)
+                    conditionList.push({
+                      Gender: {
+                        $regex:
+                          ".*" + inputArgs.FertilityNeeds === "EGG"
+                            ? "Female"
+                            : "Male" + ".*",
+                      },
+                    });
                   break;
                 default:
                   break;

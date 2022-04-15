@@ -24,7 +24,8 @@ exports.CommonDropDownListing = function (GraphQLObjectType, GraphQLList, GraphQ
             LevelOfEducation: { type: new GraphQLList(KeyValueType) },
             ProfileType: { type: new GraphQLList(KeyValueType) },
             ProfileStatus: { type: new GraphQLList(KeyValueType) },
-            Fertility: { type: new GraphQLList(KeyValueType) }
+            Fertility: { type: new GraphQLList(KeyValueType) },
+            HairColor: { type: new GraphQLList(KeyValueType) }
         })
     });
 
@@ -56,7 +57,7 @@ exports.CommonDropDownListing = function (GraphQLObjectType, GraphQLList, GraphQ
                         ScreeningType: [
                             {
                                 value: "SCREENED",
-                                name: "screened"
+                                name: "Screened"
                             },
                             {
                                 value: "UNSCREENED",
@@ -390,6 +391,64 @@ exports.CommonDropDownListing = function (GraphQLObjectType, GraphQLList, GraphQ
                                 value: "Sperm",
                                 name: "Sperm"
                             }
+                        ],
+                        HairColor:[
+                            {
+                                value: "BROWN",
+                                name: "Brown"
+                            },
+                            {
+                                value: "BLACK",
+                                name: "Black"
+                            },
+                            {
+                                value: "WHITE",
+                                name: "White"
+                            },
+                            {
+                                value: "SANDY",
+                                name: "Sandy"
+                            },
+                            {
+                                value: "GRAY",
+                                name: "Gray"
+                            },
+                            {
+                                value: "RED",
+                                name: "Red"
+                            },
+                            {
+                                value: "AUBURN",
+                                name: "Auburn"
+                            },
+                            {
+                                value: "BLOND",
+                                name: "Blond"
+                            },
+                            {
+                                value: "BLUE",
+                                name: "Blue"
+                            },
+                            {
+                                value: "GREEN",
+                                name: "Green"
+                            },
+                            {
+                                value: "ORANGE",
+                                name: "Orange"
+                            },
+                            {
+                                value: "PINK",
+                                name: "Pink"
+                            },
+                            {
+                                value: "PURPLE",
+                                name: "Purple"
+                            },
+                            {
+                                value: "OTHER",
+                                name: "Other"
+                            },
                         ]
                     }
 

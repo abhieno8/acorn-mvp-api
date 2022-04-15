@@ -12,7 +12,7 @@ const MessageSchema = new Schema({
     messageDate: { type: String  },
     status: {
         type: String,
-        enum: ['unApproved', 'Approved', 'Rejected'],
+        enum: ['unApproved', 'Approved', 'Rejected','Flagged'],
         default: 'unApproved'
     },
     messageType: {
