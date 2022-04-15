@@ -162,6 +162,8 @@ const ProfileSchema = new Schema({
       type: String,
       enum: ["O+", "O-", "A+", "A-", "B+", "B-", "AB+", "AB-", "Not sure"],
     },
+    TakingMedicationCurrently: { type: Boolean },
+    CurrentMedicationDetail: { type: String }
   },
   // SetYourPrefernce // ProfileCompleteness
   DonationSettings: {

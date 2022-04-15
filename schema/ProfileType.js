@@ -1,7 +1,16 @@
 const graphql = require("graphql");
 const { ObjectId } = require("mongodb");
+const Aws = require("aws-sdk");
 const Profile = require("../models/profile");
 const User = require("../models/user");
+
+// s3 instantiation
+const s3 = new Aws.S3({
+  accessKeyId: "AKIA2ZH2PYMSROXVVEHE", // accessKeyId that is stored in .env file
+  secretAccessKey: "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", // secretAccessKey is also store in .env file
+});
+
+const S3_BUCKET_NAME = "acorn-files-test";
 
 const {
   GraphQLObjectType,
@@ -120,6 +129,7 @@ const MediaInformation = new GraphQLInputObjectType({
   fields: () => ({
     Url: { type: GraphQLString },
     MediaType: { type: GraphQLString },
+    IsDeleted: { type: GraphQLBoolean },
   }),
 });
 
@@ -221,6 +231,8 @@ const HealthInformation = new GraphQLInputObjectType({
     Weight: { type: WeightInformation },
     Height: { type: GraphQLString },
     BloodType: { type: GraphQLString },
+    TakingMedicationCurrently: { type: GraphQLBoolean },
+    CurrentMedicationDetail: { type: GraphQLString }
   }),
 });
 
@@ -230,6 +242,8 @@ const HealthInformationSchema = new GraphQLObjectType({
     Weight: { type: WeightInformationSchema },
     Height: { type: GraphQLString }, //convert to string
     BloodType: { type: GraphQLString },
+    TakingMedicationCurrently: { type: GraphQLBoolean },
+    CurrentMedicationDetail: { type: GraphQLString }
   }),
 });
 
@@ -653,7 +667,7 @@ exports.ProfileQuery = function () {
 
       async resolve(parent, args) {
         if (!args.UserId) {
-          throw new Error(`UserId is a required field for update`);
+          throw new Error(`UserId is a required field for profile update`);
         }
         const userExist = await User.findById(args.UserId);
         const profileExistWithUser = await Profile.findOne({
@@ -667,6 +681,44 @@ exports.ProfileQuery = function () {
             `No profile exists with this user id: ${args.UserId}`
           );
         }
+        let retainedMedia = [];
+        let potentialMediaList = [];
+
+        // Handling Profile media add/Update/delete
+        if (args.ProfileMedia && args.FolderId) {
+          const mediaToBeDeleted = args.ProfileMedia.filter(
+            (pm) => pm.IsDeleted
+          );
+          retainedMedia = args.ProfileMedia.filter((pm) => !pm.IsDeleted);
+          if (mediaToBeDeleted && mediaToBeDeleted.length > 0) {
+            const toBeDeletedMediaUnits = mediaToBeDeleted.map((tbdm) =>
+              tbdm.Url.slice(tbdm.Url.lastIndexOf("/") + 1)
+            );
+            let objects = [];
+            toBeDeletedMediaUnits.forEach((tbdmu) => {
+              objects.push({ Key: `${args.FolderId}/mediaBox/${tbdmu}` });
+            });
+            
+            let params = {
+              Bucket: S3_BUCKET_NAME,
+              Delete: {
+                Objects: objects,
+              },
+            };
+            s3.deleteObjects(params, function (err, data) {
+              if (err) console.log(err, err.stack);
+              else console.log("media removed successfully");
+            });
+          }
+        }
+        if (retainedMedia && retainedMedia.length > 0) {
+          potentialMediaList = retainedMedia.map(({ IsDeleted, ...rest }) => {
+            return rest;
+          });
+        } else {
+          potentialMediaList = [];
+        }
+        // profile Update query
         const firstPhaseUpdate = await Profile.findByIdAndUpdate(
           args.id,
           {
@@ -678,7 +730,7 @@ exports.ProfileQuery = function () {
             DonationType: args.DonationType,
             Identity: args.Identity,
             ProfilePic: args.ProfilePic,
-            ProfileMedia: args.ProfileMedia,
+            ProfileMedia: potentialMediaList,
             DemographicInfo: args.DemographicInfo,
             EggInfo: args.EggInfo,
             EggDonation: args.EggDonation,
@@ -695,6 +747,7 @@ exports.ProfileQuery = function () {
           }
         );
 
+        // Profile Completness Update
         if (firstPhaseUpdate) {
           const ProfileCompletnessStatus = CalculateProfileCompletness(
             firstPhaseUpdate._doc,
