@@ -229,29 +229,45 @@ exports.MessageQuery = function (GraphQLObjectType, User, UserType, Message, Mes
             }
         },
         getFlaggedMessageList: {
-            type: MessageType,
+            type: MessageUserData,
+            args: {
+                toUserId: { type: GraphQLString },
+                fromUserId: { type: GraphQLString },
+                offset: { type: GraphQLID },
+                limit: { type: GraphQLID },
+                search: { type: GraphQLString },
+                order: { type: GraphQLInt }
+            },
             async resolve(parent, args) {
+                let offset = args.offset ? args.offset : 0;
+                if (offset < 0) {
+                    offset = 0;
+                }
+                let limit = args.limit ? args.limit : 10;
+                if (limit < 0) {
+                    limit = 10;
+                }
 
-                return await Message.aggregate([
+                let total_records = await Message.aggregate([
+                    { "$match": { status: "Flagged" } },
                     {
-                        "$match": { status: "Flagged" }
-                    },
-                    {
-                        $group: {
-                            "_id": "$_id",
-                            "toUserId": { "$last": "$toUserId" },
-                            "fromUserId": { "$last": "$fromUserId" },
+                        "$group": {
+                            "_id": {
+                                "toUserId": "$toUserId",
+                                "fromUserId": "$fromUserId",
+                            },
                             "message": { "$last": "$message" },
                             "messageFile": { "$last": "$messageFile" },
                             "messageDate": { "$last": "$messageDate" },
+                            "status": { "$last": "$status" },
                             "messageType": { "$last": "$messageType" }
                         }
                     },
                     {
                         "$project": {
-                            "_id": "$_id",
-                            "toUserId": "$toUserId",
-                            "fromUserId": "$fromUserId",
+                            "_id": 0,
+                            "toUserId": "$_id.toUserId",
+                            "fromUserId": "$_id.fromUserId",
                             "message": "$message",
                             "messageFile": "$messageFile",
                             "messageDate": "$messageDate",
@@ -260,6 +276,84 @@ exports.MessageQuery = function (GraphQLObjectType, User, UserType, Message, Mes
                         }
                     }
                 ]);
+
+                total_records = total_records.length;
+
+                let list = await Message.aggregate([
+                    { "$match": { status: "Flagged" } },
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "toUserId",
+                            foreignField: "_id",
+                            as: "toUserObj"
+                        }
+                    },
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "fromUserId",
+                            foreignField: "_id",
+                            as: "fromUserObj"
+                        }
+                    },
+                    {
+                        $lookup: {
+                            from: "profiles",
+                            localField: "fromUserId",
+                            foreignField: "UserId",
+                            as: "profile"
+                        }
+                    },
+                    {
+                        "$group": {
+                            "_id": {
+                                "toUserId": "$toUserId",
+                                "fromUserId": "$fromUserId"
+                            },
+                            "message": { "$last": "$message" },
+                            "messageFile": { "$last": "$messageFile" },
+                            "messageDate": { "$last": "$messageDate" },
+                            "status": { "$last": "$status" },
+                            "messageType": { "$last": "$messageType" },
+                            "fromUserObj": { "$last": "$fromUserObj" },
+                            "toUserObj": { "$last": "$toUserObj" },
+                            "profile": { "$last": "$profile.ProfilePic" }
+                        }
+                    },
+                    {
+                        "$project": {
+                            "toUserId": "$_id.toUserId",
+                            "fromUserId": "$_id.fromUserId",
+                            "message": "$message",
+                            "messageFile": "$messageFile",
+                            "messageDate": "$messageDate",
+                            "status": "$status",
+                            "messageType": "$messageType",
+                            "fromUserObj": "$fromUserObj",
+                            "toUserObj": "$toUserObj",
+                            "profile": "$profile"
+                        }
+                    },
+                    {
+                        "$skip": parseInt(offset)
+                    },
+                    {
+                        "$limit": parseInt(limit)
+                    },
+                    {
+                        "$sort": { "messageDate": -1 }
+                    }
+                ]);
+
+                return {
+                    offset: offset,
+                    limit: limit,
+                    total: total_records,
+                    fromUser: null,
+                    toUser: null,
+                    messageObject: list,
+                }
             }
         }
     }
